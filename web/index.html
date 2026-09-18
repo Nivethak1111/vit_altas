@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATLAS / Study Sentinel — Clinical Trial Monitoring Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            },
+            clinical: {
+              bg: '#f8fafc',
+              card: '#ffffff',
+              border: '#e2e8f0',
+              text: '#0f172a',
+              muted: '#64748b',
+              accent: '#0284c7',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: #0b0f19;
+      color: #f1f5f9;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    .node-circle {
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .node-circle:hover {
+      filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.8));
+    }
+    .pulse-warning {
+      animation: pulse-border 2s infinite;
+    }
+    @keyframes pulse-border {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+    <!-- Brand & Platform Identity -->
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+        <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold tracking-wider text-lg bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">ATLAS</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">Study Sentinel</span>
+        </div>
+        <p class="text-[11px] text-slate-400">Intelligent Clinical Trial Safety & Protocol Monitoring</p>
+      </div>
+    </div>
+
+    <!-- Study, Cut & Protocol Selectors -->
+    <div class="flex items-center flex-wrap gap-4">
+      <!-- Study Selector -->
+      <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+        <i class="fa-solid fa-folder-tree text-indigo-400 text-xs"></i>
+        <span class="text-xs text-slate-400">Study:</span>
+        <select id="studySelect" onchange="onStudyChange()" class="bg-transparent text-xs text-white font-medium focus:outline-none cursor-pointer">
+          <option value="STUDY-042" class="bg-slate-800 text-white">STUDY-042</option>
+        </select>
+      </div>
+
+      <!-- Cut Selector -->
+      <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+        <i class="fa-solid fa-clock-rotate-left text-cyan-400 text-xs"></i>
+        <span class="text-xs text-slate-400">Data Cut:</span>
+        <select id="cutSelect" onchange="onCutChange()" class="bg-transparent text-xs text-white font-semibold focus:outline-none cursor-pointer">
+          <option value="1" class="bg-slate-800 text-white">Cut 1 (v1)</option>
+          <option value="2" class="bg-slate-800 text-white">Cut 2 (v2)</option>
+          <option value="3" class="bg-slate-800 text-white">Cut 3 (v3)</option>
+        </select>
+      </div>
+
+      <!-- Active Protocol Badge -->
+      <div class="flex items-center gap-2 bg-indigo-950/70 border border-indigo-500/40 px-3 py-1.5 rounded-lg">
+        <i class="fa-solid fa-file-contract text-indigo-400 text-xs"></i>
+        <span class="text-xs text-indigo-300 font-medium">Protocol:</span>
+        <span id="activeProtocolBadge" class="text-xs font-bold text-white uppercase tracking-wide">Protocol v1</span>
+      </div>
+
+      <!-- Refresh Button -->
+      <button onclick="refreshAll()" class="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700" title="Reload Study Data">
+        <i class="fa-solid fa-arrows-rotate text-xs"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="border-b border-slate-800 bg-slate-900/60 px-6 flex space-x-1 overflow-x-auto scrollbar-thin">
+    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-4 py-3 text-xs font-semibold flex items-center gap-2 border-b-2 border-indigo-500 text-white">
+      <i class="fa-solid fa-chart-pie text-indigo-400"></i> Dashboard
+    </button>
+    <button onclick="switchTab('graph')" id="tab-graph" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-diagram-project text-cyan-400"></i> Study Graph
+    </button>
+    <button onclick="switchTab('patient360')" id="tab-patient360" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-hospital-user text-emerald-400"></i> Patient 360
+    </button>
+    <button onclick="switchTab('findings')" id="tab-findings" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Findings Registry
+      <span id="findingsCountBadge" class="ml-1 px-1.5 py-0.2 bg-amber-500/20 text-amber-300 text-[10px] rounded-full border border-amber-500/30">0</span>
+    </button>
+    <button onclick="switchTab('ask')" id="tab-ask" class="px-4 py-3 text-xs font-semibold flex items-center gap-2 border-b-2 border-transparent text-amber-400 hover:text-amber-300">
+      <i class="fa-solid fa-brain"></i> Ask ATLAS (Answer Engine)
+    </button>
+    <button onclick="switchTab('queue')" id="tab-queue" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-list-check text-purple-400"></i> Monitoring Queue
+    </button>
+    <button onclick="switchTab('queries')" id="tab-queries" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-comments text-sky-400"></i> Site Queries
+    </button>
+    <button onclick="switchTab('decisions')" id="tab-decisions" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-gavel text-rose-400"></i> Monitor Decisions
+    </button>
+    <button onclick="switchTab('documents')" id="tab-documents" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-book-medical text-indigo-400"></i> Study Documents
+    </button>
+  </nav>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 p-6 overflow-y-auto max-w-7xl w-full mx-auto space-y-6">
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="view-dashboard" class="space-y-6">
+      <!-- Executive Metric Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <!-- Subjects -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Total Subjects</div>
+          <div id="metricSubjects" class="text-2xl font-bold text-white mt-1">--</div>
+          <div class="text-[11px] text-emerald-400 flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-users text-[10px]"></i> Active at this cut
+          </div>
+        </div>
+
+        <!-- Sites -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Investigational Sites</div>
+          <div id="metricSites" class="text-2xl font-bold text-white mt-1">--</div>
+          <div class="text-[11px] text-cyan-400 flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-hospital text-[10px]"></i> Reporting sites
+          </div>
+        </div>
+
+        <!-- Records -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Total Records</div>
+          <div id="metricRecords" class="text-2xl font-bold text-white mt-1">--</div>
+          <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-database text-[10px]"></i> cut_available &le; <span class="active-cut-label">1</span>
+          </div>
+        </div>
+
+        <!-- Protocol -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Active Protocol</div>
+          <div id="metricProtocol" class="text-xl font-bold text-indigo-400 mt-1 uppercase">v1</div>
+          <div id="metricVisitWindow" class="text-[11px] text-indigo-300/80 flex items-center gap-1 mt-1">
+            &plusmn;7 days window
+          </div>
+        </div>
+
+        <!-- Corrections -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Applied Corrections</div>
+          <div id="metricCorrections" class="text-2xl font-bold text-amber-400 mt-1">--</div>
+          <div class="text-[11px] text-amber-400/80 flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-pen-to-square text-[10px]"></i> Audit trail active
+          </div>
+        </div>
+
+        <!-- Detected Findings -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Clinical Findings</div>
+          <div id="metricFindings" class="text-2xl font-bold text-rose-400 mt-1">--</div>
+          <div class="text-[11px] text-rose-400/80 flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-shield-virus text-[10px]"></i> Automated rules
+          </div>
+        </div>
+      </div>
+
+      <!-- Domain Distribution & Cut Progression -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- CDISC Domains Distribution -->
+        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+              <i class="fa-solid fa-cubes text-indigo-400"></i> Clinical Domain Record Distribution
+            </h3>
+            <span class="text-xs text-slate-400">Point-in-time view at Cut <span class="active-cut-label">1</span></span>
+          </div>
+          <div id="domainBarGrid" class="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-3">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <!-- Data Cut Timeline & Quality Overview -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+          <div>
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2 mb-4">
+              <i class="fa-solid fa-timeline text-cyan-400"></i> Study Data Cut Progression
+            </h3>
+            <div id="cutTimelineList" class="space-y-3">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-slate-800">
+            <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+              <span>Missing Values:</span>
+              <span id="metricMissingValues" class="text-white font-medium">--</span>
+            </div>
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span>Data Quality Status:</span>
+              <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">Verified Active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: STUDY GRAPH -->
+    <section id="view-graph" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+          <div>
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <i class="fa-solid fa-diagram-project text-indigo-400"></i> StudyGraph Interactive Visual Explorer
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Hierarchical Traversal: Study &rarr; Site &rarr; Subject &rarr; Clinical Domains &rarr; Evidence Identity</p>
+          </div>
+
+          <!-- Subject Select for Graph -->
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-slate-400">Select Subject:</span>
+            <select id="graphSubjectSelect" onchange="renderSubjectGraph()" class="bg-slate-800 border border-slate-700 text-xs text-white rounded-lg px-3 py-1.5 focus:outline-none">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <!-- SVG Graph Canvas -->
+        <div class="w-full bg-slate-950/80 rounded-xl border border-slate-800 p-4 relative min-h-[420px] flex items-center justify-center overflow-hidden" id="graphContainer">
+          <svg id="studyGraphSvg" class="w-full h-[400px]" viewBox="0 0 900 400"></svg>
+        </div>
+
+        <!-- Domain Selected Records Drawer -->
+        <div id="graphDomainDetail" class="mt-6 hidden bg-slate-950/90 border border-slate-800 rounded-xl p-5">
+          <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+            <div>
+              <h3 id="graphDomainTitle" class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-folder-open text-indigo-400"></i> Domain Records
+              </h3>
+              <p class="text-xs text-slate-400">Click any row to inspect exact Evidence Identity and clinical audit trail</p>
+            </div>
+            <button onclick="document.getElementById('graphDomainDetail').classList.add('hidden')" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded">
+              Close
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400">
+                  <th class="py-2 px-3">Evidence Identity</th>
+                  <th class="py-2 px-3">Cut Available</th>
+                  <th class="py-2 px-3">Correction Status</th>
+                  <th class="py-2 px-3">Clinical Finding / Values</th>
+                  <th class="py-2 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="graphRecordsTableBody" class="divide-y divide-slate-800/60">
+                <!-- Records injected here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: PATIENT 360 -->
+    <section id="view-patient360" class="hidden space-y-6">
+      <!-- Subject Header Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 font-bold text-lg">
+              <i class="fa-solid fa-user-doctor"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-3">
+                <select id="p360SubjectSelect" onchange="loadPatient360()" class="bg-slate-800 border border-slate-700 text-sm font-bold text-white rounded-lg px-3 py-1 focus:outline-none">
+                  <!-- Populated dynamically -->
+                </select>
+                <span id="p360ArmBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">Drug 10mg</span>
+                <span id="p360SiteBadge" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">SITE-101</span>
+              </div>
+              <p id="p360DemographicsSummary" class="text-xs text-slate-400 mt-1">Age: -- &bull; Sex: -- &bull; Day 1: --</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-slate-400">Viewing Cut:</span>
+            <span class="px-2.5 py-1 bg-cyan-950 border border-cyan-500/30 text-cyan-300 text-xs font-bold rounded">
+              Cut <span class="active-cut-label">1</span> (<span id="p360Protocol">v1</span>)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Patient 360 Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Column 1: Safety & Dosing (AEs, SAEs, Exposure) -->
+        <div class="space-y-6">
+          <!-- Serious Adverse Events & AEs -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-white flex items-center justify-between mb-3">
+              <span class="flex items-center gap-2"><i class="fa-solid fa-heart-pulse text-rose-400"></i> Adverse Events (AE)</span>
+              <span id="p360AeCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-bold">0</span>
+            </h3>
+            <div id="p360AeList" class="space-y-2.5 max-h-[360px] overflow-y-auto scrollbar-thin">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+
+          <!-- Treatment Exposure -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-white flex items-center justify-between mb-3">
+              <span class="flex items-center gap-2"><i class="fa-solid fa-pills text-indigo-400"></i> Exposure & Dosing (EX)</span>
+              <span id="p360ExCount" class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-bold">0</span>
+            </h3>
+            <div id="p360ExList" class="space-y-2 max-h-[240px] overflow-y-auto scrollbar-thin">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Labs, Ranges & Special Values -->
+        <div class="space-y-6 lg:col-span-2">
+          <!-- Laboratory Findings with Range & Unit Conversions -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                <i class="fa-solid fa-flask-vial text-cyan-400"></i> Laboratory Panel (LB) & Safety Ranges
+              </h3>
+              <span class="text-[11px] text-slate-400">LAB+TEST reference ranges &bull; Preserves original unit</span>
+            </div>
+            <div class="overflow-x-auto max-h-[360px] scrollbar-thin">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400">
+                    <th class="py-2 px-2.5">Test Code</th>
+                    <th class="py-2 px-2.5">Reported Value & Unit</th>
+                    <th class="py-2 px-2.5">Normalized Value</th>
+                    <th class="py-2 px-2.5">Reference Range</th>
+                    <th class="py-2 px-2.5">Status</th>
+                    <th class="py-2 px-2.5">Visit & Date</th>
+                  </tr>
+                </thead>
+                <tbody id="p360LbTableBody" class="divide-y divide-slate-800/60">
+                  <!-- Injected dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bottom Row: ConMeds, Vitals, ECG, Disposition -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Concomitant Meds -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+              <h4 class="text-xs font-semibold text-white flex items-center justify-between mb-2">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-capsules text-amber-400"></i> Concomitant Meds (CM)</span>
+                <span id="p360CmCount" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">0</span>
+              </h4>
+              <div id="p360CmList" class="space-y-1.5 max-h-[160px] overflow-y-auto scrollbar-thin text-xs text-slate-300"></div>
+            </div>
+
+            <!-- Vital Signs -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+              <h4 class="text-xs font-semibold text-white flex items-center justify-between mb-2">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-stethoscope text-emerald-400"></i> Vital Signs (VS)</span>
+                <span id="p360VsCount" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">0</span>
+              </h4>
+              <div id="p360VsList" class="space-y-1.5 max-h-[160px] overflow-y-auto scrollbar-thin text-xs text-slate-300"></div>
+            </div>
+          </div>
+
+          <!-- Detected Patient Findings -->
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <h3 class="text-sm font-semibold text-white flex items-center gap-2 mb-3">
+              <i class="fa-solid fa-shield-virus text-amber-400"></i> Patient Clinical Findings & Monitoring Triggers
+            </h3>
+            <div id="p360FindingsList" class="space-y-2.5">
+              <!-- Injected dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: FINDINGS REGISTRY -->
+    <section id="view-findings" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Automated Clinical Findings Registry
+            </h2>
+            <p class="text-xs text-slate-400">Data-driven findings derived from protocol rules and CDISC domain evidence</p>
+          </div>
+
+          <!-- Multi-filter bar -->
+          <div class="flex items-center flex-wrap gap-2">
+            <!-- Severity filter -->
+            <select id="filterSeverity" onchange="loadFindings()" class="bg-slate-800 border border-slate-700 text-xs text-white rounded px-2.5 py-1.5">
+              <option value="">All Severities</option>
+              <option value="CRITICAL">Critical</option>
+              <option value="MAJOR">Major</option>
+              <option value="MODERATE">Moderate</option>
+              <option value="INFO">Info / Audit</option>
+            </select>
+
+            <!-- Domain filter -->
+            <select id="filterDomain" onchange="loadFindings()" class="bg-slate-800 border border-slate-700 text-xs text-white rounded px-2.5 py-1.5">
+              <option value="">All Domains</option>
+              <option value="AE">AE (Adverse Events)</option>
+              <option value="EX">EX (Exposure)</option>
+              <option value="LB">LB (Laboratory)</option>
+              <option value="CM">CM (ConMeds)</option>
+              <option value="VS">VS (Vitals)</option>
+              <option value="DM">DM (Demographics)</option>
+            </select>
+
+            <!-- Status filter -->
+            <select id="filterStatus" onchange="loadFindings()" class="bg-slate-800 border border-slate-700 text-xs text-white rounded px-2.5 py-1.5">
+              <option value="">All Statuses</option>
+              <option value="OPEN">Open</option>
+              <option value="UNDER_REVIEW">Under Review</option>
+              <option value="RESOLVED">Resolved</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Findings Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400">
+                <th class="py-2.5 px-3">Finding Code</th>
+                <th class="py-2.5 px-3">Subject / Site</th>
+                <th class="py-2.5 px-3">Domain</th>
+                <th class="py-2.5 px-3">Severity</th>
+                <th class="py-2.5 px-3">Description</th>
+                <th class="py-2.5 px-3">Protocol / Cut</th>
+                <th class="py-2.5 px-3">Evidence</th>
+                <th class="py-2.5 px-3">Status</th>
+                <th class="py-2.5 px-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="findingsTableBody" class="divide-y divide-slate-800/60">
+              <!-- Injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: MONITORING QUEUE -->
+    <section id="view-queue" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <h2 class="text-base font-semibold text-white flex items-center gap-2 mb-2">
+          <i class="fa-solid fa-list-check text-purple-400"></i> Clinical Monitor Action Queue
+        </h2>
+        <p class="text-xs text-slate-400 mb-6">Prioritized triage pipeline: Finding &rarr; Site Query &rarr; Site Reply &rarr; Monitor Decision</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Under Review / Clarification Needed -->
+          <div class="bg-slate-950/80 border border-amber-500/30 rounded-xl p-4">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+              <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-question"></i> Action Required / Clarify
+              </span>
+              <span id="queueClarifyCount" class="text-xs font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">0</span>
+            </div>
+            <div id="queueClarifyList" class="space-y-3"></div>
+          </div>
+
+          <!-- Pending CRA Review -->
+          <div class="bg-slate-950/80 border border-indigo-500/30 rounded-xl p-4">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+              <span class="text-xs font-bold text-indigo-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-hourglass-half"></i> Open Findings
+              </span>
+              <span id="queueOpenCount" class="text-xs font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded">0</span>
+            </div>
+            <div id="queueOpenList" class="space-y-3"></div>
+          </div>
+
+          <!-- Resolved / Approved -->
+          <div class="bg-slate-950/80 border border-emerald-500/30 rounded-xl p-4">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+              <span class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-check"></i> Resolved / Approved
+              </span>
+              <span id="queueResolvedCount" class="text-xs font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">0</span>
+            </div>
+            <div id="queueResolvedList" class="space-y-3"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: SITE QUERIES -->
+    <section id="view-queries" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <h2 class="text-base font-semibold text-white flex items-center gap-2 mb-2">
+          <i class="fa-solid fa-comments text-sky-400"></i> Site Queries & Site Replies
+        </h2>
+        <p class="text-xs text-slate-400 mb-4">Resolved via exact identity <code class="text-sky-300 bg-slate-800 px-1 py-0.5 rounded">DOMAIN|USUBJID|SEQ</code> with default fallback</p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400">
+                <th class="py-2.5 px-3">Lookup Key</th>
+                <th class="py-2.5 px-3">Domain</th>
+                <th class="py-2.5 px-3">Subject ID</th>
+                <th class="py-2.5 px-3">Site Reply Text</th>
+                <th class="py-2.5 px-3">Reply Type</th>
+                <th class="py-2.5 px-3">Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="siteQueriesTableBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: MONITOR DECISIONS -->
+    <section id="view-decisions" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <h2 class="text-base font-semibold text-white flex items-center gap-2 mb-2">
+          <i class="fa-solid fa-gavel text-rose-400"></i> Medical Monitor Adjudication & Decisions
+        </h2>
+        <p class="text-xs text-slate-400 mb-4">Resolved via <code class="text-rose-300 bg-slate-800 px-1 py-0.5 rounded">CODE|USUBJID</code> supporting APPROVED, REJECTED, and CLARIFY states</p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400">
+                <th class="py-2.5 px-3">Lookup Key</th>
+                <th class="py-2.5 px-3">Decision</th>
+                <th class="py-2.5 px-3">Monitor Name</th>
+                <th class="py-2.5 px-3">Comments / Rationale</th>
+                <th class="py-2.5 px-3">Inquiry (For CLARIFY)</th>
+              </tr>
+            </thead>
+            <tbody id="monitorDecisionsTableBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: ASK ATLAS / ANSWER ENGINE -->
+    <section id="view-ask" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-4 border-b border-slate-800 pb-3">
+          <div>
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <i class="fa-solid fa-brain text-amber-400"></i> ATLAS Answer Engine & Clinical Q&A
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Evidence-grounded conversational reasoning powered by StudyGraph & Rule Engine</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span>Query Cut:</span>
+            <span class="px-2 py-0.5 bg-indigo-950 border border-indigo-500/30 text-indigo-300 font-bold rounded">
+              Cut <span class="active-cut-label">1</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Architectural Pipeline Banner -->
+        <div class="bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-[11px] font-mono text-slate-400 flex items-center justify-between overflow-x-auto gap-2 mb-5">
+          <span class="text-indigo-300 font-bold whitespace-nowrap"><i class="fa-regular fa-circle-question"></i> USER QUESTION</span>
+          <span class="text-slate-600">&rarr;</span>
+          <span class="text-cyan-300 whitespace-nowrap">Query Understanding</span>
+          <span class="text-slate-600">&rarr;</span>
+          <span class="text-purple-300 whitespace-nowrap">Question Type</span>
+          <span class="text-slate-600">&rarr;</span>
+          <span class="text-emerald-300 whitespace-nowrap">[ StudyGraph &bull; Rule Engine ]</span>
+          <span class="text-slate-600">&rarr;</span>
+          <span class="text-amber-300 whitespace-nowrap">Evidence (domain, USUBJID, SEQ)</span>
+          <span class="text-slate-600">&rarr;</span>
+          <span class="text-sky-300 whitespace-nowrap">Site/Monitor Data</span>
+          <span class="text-slate-600">&rarr;</span>
+          <span class="text-white font-bold whitespace-nowrap"><i class="fa-solid fa-square-check text-emerald-400"></i> ANSWER</span>
+        </div>
+
+        <!-- Query Input Form -->
+        <form onsubmit="submitQuestion(event)" class="flex gap-3 mb-4">
+          <div class="relative flex-1">
+            <input
+              type="text"
+              id="askAtlasInput"
+              placeholder="Ask a question about patients, safety findings, SAEs, dosing, Hy's law, prohibited meds, or monitoring status..."
+              class="w-full bg-slate-950 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+            />
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-500 text-xs"></i>
+          </div>
+          <button
+            type="submit"
+            id="btnAskSubmit"
+            class="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-xs rounded-lg shadow-lg shadow-amber-500/20 flex items-center gap-2 transition-all cursor-pointer"
+          >
+            <span>Ask ATLAS</span>
+            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+          </button>
+        </form>
+
+        <!-- Suggested Prompt Chips -->
+        <div class="flex items-center flex-wrap gap-2 mb-6">
+          <span class="text-[11px] text-slate-400">Suggested queries:</span>
+          <button onclick="setQueryPrompt('Were there any SAE reporting delays or discrepancies?')" class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700 transition-colors">
+            SAE discrepancies & delays
+          </button>
+          <button onclick="setQueryPrompt('Why was subject STUDY042-101-002 flagged and what did the site reply?')" class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700 transition-colors">
+            Subject 101-002 findings & site reply
+          </button>
+          <button onclick="setQueryPrompt('Are there any Hy\'s law candidates in the study?')" class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700 transition-colors">
+            Hy's law candidates
+          </button>
+          <button onclick="setQueryPrompt('What dosing errors occurred at Cut 1 versus Cut 2?')" class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700 transition-colors">
+            Dosing errors Cut 1 vs Cut 2
+          </button>
+          <button onclick="setQueryPrompt('Did any subjects take prohibited medications?')" class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700 transition-colors">
+            Prohibited medications
+          </button>
+          <button onclick="setQueryPrompt('What are the overall study statistics at this cut?')" class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-[11px] border border-slate-700 transition-colors">
+            Study statistics
+          </button>
+        </div>
+
+        <!-- Answer Response Card (Hidden until submitted) -->
+        <div id="answerResultContainer" class="hidden space-y-4">
+          <!-- Main Synthesized Answer Box -->
+          <div class="bg-slate-950 border border-amber-500/40 rounded-xl p-5 shadow-xl space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-xs">
+                  <i class="fa-solid fa-sparkles"></i>
+                </span>
+                <span class="text-xs font-bold text-white uppercase tracking-wider">Clinical Answer</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="answerTypeBadge" class="text-[10px] px-2 py-0.5 rounded font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  RULE_EVALUATION
+                </span>
+                <span id="answerProtocolBadge" class="text-[10px] px-2 py-0.5 rounded font-mono bg-slate-800 text-slate-300">
+                  Protocol v1 &bull; Cut 1
+                </span>
+              </div>
+            </div>
+
+            <!-- Direct Answer Content -->
+            <p id="answerDirectText" class="text-sm text-slate-100 font-medium leading-relaxed"></p>
+
+            <!-- Clinical Rationale -->
+            <div id="answerRationaleContainer" class="text-xs text-slate-400 italic pt-1 border-t border-slate-800/60">
+              <span id="answerRationaleText"></span>
+            </div>
+          </div>
+
+          <!-- Evidence & Response Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Supporting Evidence Identities -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+              <h3 class="text-xs font-bold text-white flex items-center justify-between mb-3">
+                <span class="flex items-center gap-2"><i class="fa-solid fa-fingerprint text-indigo-400"></i> Supporting Evidence Identity</span>
+                <span id="answerEvidenceCount" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300">0</span>
+              </h3>
+              <div id="answerEvidenceChips" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <!-- Site & Monitor Context -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+              <h3 class="text-xs font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-clipboard-check text-sky-400"></i> Monitoring & Governance Context
+              </h3>
+              <div id="answerResponsesContainer" class="space-y-2 text-xs"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 8: STUDY DOCUMENTS -->
+    <section id="view-documents" class="hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-base font-semibold text-white flex items-center gap-2">
+              <i class="fa-solid fa-book-medical text-indigo-400"></i> Study Protocol & Evidence Reference Documents
+            </h2>
+            <p class="text-xs text-slate-400">Reference evidence only &mdash; safe read-only markdown content</p>
+          </div>
+          <div class="flex gap-2" id="documentSelectorButtons"></div>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-6 prose prose-invert max-w-none text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed" id="documentContentArea">
+          Select a document to inspect...
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- EVIDENCE INSPECTION MODAL -->
+  <div id="evidenceModal" class="fixed inset-0 bg-black/75 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
+            <i class="fa-solid fa-fingerprint"></i>
+          </span>
+          <div>
+            <h3 id="modalEvidenceTitle" class="text-sm font-bold text-white">Evidence Record</h3>
+            <p id="modalEvidenceIdentity" class="text-xs text-indigo-400 font-mono">DOMAIN|USUBJID|SEQ</p>
+          </div>
+        </div>
+        <button onclick="closeEvidenceModal()" class="text-slate-400 hover:text-white text-base">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4 flex-1 text-xs" id="modalEvidenceBody">
+        <!-- Injected dynamically -->
+      </div>
+
+      <div class="px-5 py-3 border-t border-slate-800 bg-slate-950 flex justify-end">
+        <button onclick="closeEvidenceModal()" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLIENT-SIDE APPLICATION JAVASCRIPT -->
+  <script src="/app.js"></script>
+</body>
+</html>

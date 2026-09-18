@@ -1,0 +1,4 @@
+cut_id,cut_date,protocol_version,description
+1,2024-03-01,v1,Interim Safety Cut 1
+2,2024-06-01,v2,Interim Safety Cut 2 (Protocol Amendment 1)
+3,2024-09-01,v3,Final Analysis Cut (Protocol Amendment 2)

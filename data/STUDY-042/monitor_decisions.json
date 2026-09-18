@@ -1,0 +1,28 @@
+{
+  "SAE_DISCREPANCY_AESHOSP|STUDY042-101-002": {
+    "decision": "CLARIFY",
+    "inquiry": "Medical Monitor Inquiry: Hospital discharge summary indicates acute coronary syndrome. Please confirm date of admission, date of discharge, and ensure initial MedWatch 3500A / CIOMS I form is transmitted within 24 hours.",
+    "comment": "Pending official expedited safety reporting documentation.",
+    "monitor_name": "Dr. Eleanor Vance, MD (Lead Medical Monitor)",
+    "timestamp": "2024-03-06T16:00:00Z"
+  },
+  "DOSING_ERROR|STUDY042-102-002": {
+    "decision": "APPROVED",
+    "comment": "Pharmacy log source records reviewed during remote monitoring visit. Correction confirmed in Cut 2 data. Deviation closed as resolved.",
+    "monitor_name": "Marcus Brody, Senior CRA",
+    "timestamp": "2024-04-15T10:30:00Z"
+  },
+  "PROHIBITED_MED_GLUCOCORTICOID|STUDY042-103-001": {
+    "decision": "REJECTED",
+    "comment": "Protocol deviation confirmed. Patient is ineligible to continue investigational product per Protocol Section 5.3. Investigator must initiate tapering and study discontinuation protocol.",
+    "monitor_name": "Dr. Eleanor Vance, MD (Lead Medical Monitor)",
+    "timestamp": "2024-03-12T17:45:00Z"
+  },
+  "HYS_LAW_CANDIDATE|STUDY042-102-001": {
+    "decision": "CLARIFY",
+    "inquiry": "Urgent Medical Monitor Request: Immediate drug discontinuation required per protocol Section 6.2. Please schedule follow-up repeat liver panel within 48-72 hours and obtain viral hepatitis serologies (HAV, HBV, HCV, HEV) and autoimmune markers.",
+    "comment": "Hepatic safety adjudication board notified.",
+    "monitor_name": "Dr. Arthur Pendelton, Hepatology Safety Chair",
+    "timestamp": "2024-03-20T08:00:00Z"
+  }
+}

@@ -1,0 +1,4 @@
+domain,usubjid,seq,field_name,original_value,corrected_value,correction_cut,reason
+EX,STUDY042-102-002,1,EXDOSE,20,10,2,Transcription error corrected based on pharmacy drug dispensing log
+LB,STUDY042-101-001,2,LBORRES,<5,4.8,2,Re-analyzed on quantitative assay at Central Lab
+VS,STUDY042-101-002,1,DIABP,190,90,3,Typographical error entered by site data entry clerk
