@@ -39,6 +39,8 @@ async function refreshAll() {
   if (state.activeTab === "queries") await loadQueries();
   if (state.activeTab === "decisions") await loadDecisions();
   if (state.activeTab === "documents") await loadDocuments();
+  if (state.activeTab === "labexplorer") await loadLabExplorer();
+  if (state.activeTab === "cutexplorer") await initCutComparison();
 }
 
 function updateCutBadges() {
@@ -66,6 +68,9 @@ function switchTab(tabId) {
     "queries",
     "decisions",
     "documents",
+    "labexplorer",
+    "cutexplorer",
+    "evidence"
   ];
 
   tabs.forEach((t) => {
@@ -73,14 +78,16 @@ function switchTab(tabId) {
     const view = document.getElementById(`view-${t}`);
     if (t === tabId) {
       if (btn) {
-        btn.classList.remove("border-transparent", "text-slate-400");
-        btn.classList.add("border-indigo-500", "text-white");
+        btn.classList.remove("text-slate-400", "hover:bg-slate-800", "hover:text-slate-200");
+        btn.classList.add("bg-indigo-500/10", "text-indigo-400");
       }
       if (view) view.classList.remove("hidden");
     } else {
       if (btn) {
-        btn.classList.remove("border-indigo-500", "text-white");
-        btn.classList.add("border-transparent", "text-slate-400");
+        if (!btn.classList.contains("text-amber-400")) { // Keep ask styling intact if it's the ask button
+            btn.classList.remove("bg-indigo-500/10", "text-indigo-400");
+            btn.classList.add("text-slate-400", "hover:bg-slate-800", "hover:text-slate-200");
+        }
       }
       if (view) view.classList.add("hidden");
     }
@@ -202,6 +209,14 @@ async function loadDashboard() {
     document.getElementById("metricCorrections").textContent = stats.correction_count || 0;
     document.getElementById("metricFindings").textContent = state.findings.length;
     document.getElementById("findingsCountBadge").textContent = state.findings.length;
+    
+    // Add SAE and Dosing Errors
+    const saeCount = state.findings.filter(f => f.finding_code.startsWith("SAE")).length;
+    const dosingCount = state.findings.filter(f => f.finding_code.startsWith("EX")).length;
+    const saeEl = document.getElementById("metricSAEs");
+    if (saeEl) saeEl.textContent = saeCount;
+    const dosingEl = document.getElementById("metricDosingErrors");
+    if (dosingEl) dosingEl.textContent = dosingCount;
 
     // Visit Window Description
     const visitWin = document.getElementById("metricVisitWindow");
@@ -951,6 +966,7 @@ async function loadQueue() {
           <span class="text-[10px] font-mono text-indigo-400">${f.subject}</span>
         </div>
         <p class="text-[11px] text-slate-300 leading-tight">${f.description}</p>
+        ${f.monitor_decision?.decision === 'CLARIFY' ? `<div class="p-1.5 mt-1 bg-amber-950/50 border border-amber-500/30 rounded text-[10px] text-amber-300"><i class="fa-solid fa-circle-question"></i> ${f.monitor_decision.inquiry || 'Clarification required.'}</div>` : ''}
         <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[10px]">
           <span class="text-slate-400">Site: ${f.site}</span>
           <button onclick="inspectFindingDetail('${f.finding_code}', '${f.subject}')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-white rounded font-medium">
@@ -1151,13 +1167,13 @@ async function submitQuestion(event) {
     const respContainer = document.getElementById("answerResponsesContainer");
 
     if (container) container.classList.remove("hidden");
-    if (directText) directText.textContent = ans.direct_answer || "No response generated.";
+    if (directText) directText.textContent = ans.answer || "No response generated.";
     if (typeBadge) typeBadge.textContent = ans.question_type || "ANSWER";
     if (protBadge) protBadge.textContent = `Protocol ${ans.protocol_version?.toUpperCase() || "V1"} • Cut ${ans.cut || state.currentCut}`;
-    if (rationaleText) rationaleText.textContent = ans.clinical_rationale || "";
+    if (rationaleText) rationaleText.textContent = ans.explanation || "";
 
     // Evidence Chips
-    const refs = ans.evidence_references || [];
+    const refs = ans.evidence || [];
     if (evCount) evCount.textContent = refs.length;
     if (evChips) {
       if (refs.length === 0) {
@@ -1183,8 +1199,8 @@ async function submitQuestion(event) {
     // Site / Monitor Responses Context
     if (respContainer) {
       let html = "";
-      const siteReps = ans.site_replies || [];
-      const monDecs = ans.monitor_decisions || [];
+      const siteReps = ans.site_reply || [];
+      const monDecs = ans.monitor_decision || [];
 
       if (siteReps.length === 0 && monDecs.length === 0) {
         html = `<p class="text-slate-500 text-[11px]">No external queries or monitor decisions linked to this query topic.</p>`;
@@ -1230,3 +1246,173 @@ async function submitQuestion(event) {
     }
   }
 }
+
+
+// --- NEW APP EXTENSIONS (Lab, Cut Compare, Evidence, Search) ---
+
+async function loadLabExplorer() {
+  const subj = document.getElementById("labFilterSubject")?.value || "";
+  const test = document.getElementById("labFilterTest")?.value || "";
+  try {
+    const res = await fetch(`/api/labs?study=${state.currentStudy}&cut=${state.currentCut}&subject=${subj}&test=${test}`);
+    const data = await res.json();
+    const tbody = document.getElementById("labExplorerTableBody");
+    if (!tbody) return;
+    
+    tbody.innerHTML = data.labs.map(lb => {
+      const isNorm = lb.normalized_value !== null;
+      return `
+        <tr class="hover:bg-slate-900/80">
+          <td class="py-2 px-3 font-mono text-indigo-300 font-semibold">${lb.subject}</td>
+          <td class="py-2 px-3"><div class="font-bold text-white">${lb.test}</div><div class="text-[10px] text-slate-500">${lb.lab}</div></td>
+          <td class="py-2 px-3 text-slate-300 font-mono">${lb.reported_value} ${lb.reported_unit || ""}</td>
+          <td class="py-2 px-3 font-mono font-bold ${isNorm ? 'text-cyan-400' : 'text-slate-500'}">${isNorm ? lb.normalized_value + ' ' + (lb.normalized_unit||'') : '--'}</td>
+          <td class="py-2 px-3 text-slate-400 text-[10px]">[${lb.ref_low ?? '--'} - ${lb.ref_high ?? '--'}]</td>
+          <td class="py-2 px-3 text-slate-400">${lb.date || '--'}</td>
+          <td class="py-2 px-3">
+            <button onclick="inspectEvidenceKey('${lb.evidence}')" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded text-[10px]"><i class="fa-solid fa-fingerprint"></i></button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  } catch (err) {
+    console.error("Error loading lab explorer:", err);
+  }
+}
+
+async function initCutComparison() {
+  const selN = document.getElementById("cutCompareN");
+  const selM = document.getElementById("cutCompareM");
+  if (!selN || !selM) return;
+  
+  const html = state.cuts.map(c => `<option value="${c.cut_id}">Cut ${c.cut_id}</option>`).join("");
+  selN.innerHTML = html;
+  selM.innerHTML = html;
+  
+  if (state.cuts.length > 1) {
+    selN.value = state.cuts[state.cuts.length - 2].cut_id;
+    selM.value = state.cuts[state.cuts.length - 1].cut_id;
+  }
+}
+
+async function loadCutComparison() {
+  const n = document.getElementById("cutCompareN")?.value;
+  const m = document.getElementById("cutCompareM")?.value;
+  if (!n || !m) return;
+  
+  try {
+    const res = await fetch(`/api/compare_cuts?study=${state.currentStudy}&cut_n=${n}&cut_m=${m}`);
+    const data = await res.json();
+    
+    let protoHtml = "";
+    if (data.protocol_n !== data.protocol_m) {
+      protoHtml = `<div class="col-span-1 md:col-span-2 p-3 bg-indigo-950/40 border border-indigo-500/40 rounded-lg text-xs text-indigo-200 mb-4 flex items-center gap-2"><i class="fa-solid fa-code-branch"></i> <b>Protocol Change Detected:</b> ${data.protocol_n.toUpperCase()} &rarr; ${data.protocol_m.toUpperCase()}</div>`;
+    } else {
+      protoHtml = `<div class="col-span-1 md:col-span-2 p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-400 mb-4 flex items-center gap-2"><i class="fa-solid fa-code-branch"></i> <b>Protocol Version:</b> ${data.protocol_m.toUpperCase()} (Unchanged)</div>`;
+    }
+    
+    const resultsContainer = document.getElementById("cutCompareResults");
+    
+    // Inject protoHtml before the 4 grid columns
+    resultsContainer.innerHTML = protoHtml + `
+      <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
+        <h3 class="text-sm font-bold text-white mb-2">New Records <span id="cutNewRecordsCount" class="text-xs ml-2 text-slate-400">(${data.new_records.length})</span></h3>
+        <div id="cutNewRecordsList" class="space-y-1 text-xs text-slate-300 max-h-64 overflow-y-auto">
+          ${data.new_records.map(r => `<div class="cursor-pointer text-indigo-300 hover:text-indigo-200 font-mono" onclick="inspectEvidenceKey('${r}')"><i class="fa-solid fa-plus text-emerald-400 w-4"></i> ${r}</div>`).join("") || "None"}
+        </div>
+      </div>
+      <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
+        <h3 class="text-sm font-bold text-white mb-2">Corrected Records <span id="cutCorrectedCount" class="text-xs ml-2 text-slate-400">(${data.corrected_records.length})</span></h3>
+        <div id="cutCorrectedList" class="space-y-1 text-xs text-slate-300 max-h-64 overflow-y-auto">
+          ${data.corrected_records.map(r => `<div class="cursor-pointer text-amber-300 hover:text-amber-200 font-mono" onclick="inspectEvidenceKey('${r.evidence}')"><i class="fa-solid fa-pen text-amber-400 w-4"></i> ${r.evidence} [${r.field}: ${r.old} &rarr; ${r.new}]</div>`).join("") || "None"}
+        </div>
+      </div>
+      <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
+        <h3 class="text-sm font-bold text-white mb-2">New Findings <span id="cutNewFindingsCount" class="text-xs ml-2 text-slate-400">(${data.new_findings.length})</span></h3>
+        <div id="cutNewFindingsList" class="space-y-1 text-xs text-slate-300 max-h-64 overflow-y-auto">
+          ${data.new_findings.map(f => `<div class="cursor-pointer text-rose-300 hover:text-rose-200 font-mono" onclick="switchTab('findings')"><i class="fa-solid fa-triangle-exclamation text-rose-400 w-4"></i> ${f}</div>`).join("") || "None"}
+        </div>
+      </div>
+      <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
+        <h3 class="text-sm font-bold text-white mb-2">Resolved Findings <span id="cutResolvedFindingsCount" class="text-xs ml-2 text-slate-400">(${data.resolved_findings.length})</span></h3>
+        <div id="cutResolvedFindingsList" class="space-y-1 text-xs text-slate-300 max-h-64 overflow-y-auto">
+          ${data.resolved_findings.map(f => `<div class="cursor-pointer text-emerald-300 font-mono" onclick="switchTab('findings')"><i class="fa-solid fa-check text-emerald-400 w-4"></i> ${f}</div>`).join("") || "None"}
+        </div>
+      </div>
+    `;
+    
+  } catch (err) {
+    console.error("Error loading cut comparison:", err);
+  }
+}
+
+async function executeGlobalSearch() {
+  const q = document.getElementById("globalSearchInput")?.value?.trim();
+  const resDiv = document.getElementById("globalSearchResults");
+  if (!q) {
+    if (resDiv) resDiv.classList.add("hidden");
+    return;
+  }
+  
+  try {
+    const res = await fetch(`/api/search?study=${state.currentStudy}&cut=${state.currentCut}&q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    
+    if (resDiv) {
+      resDiv.classList.remove("hidden");
+      if (data.results.length === 0) {
+        resDiv.innerHTML = `<div class="p-3 text-slate-400 text-center">No results found for "${q}".</div>`;
+      } else {
+        resDiv.innerHTML = data.results.map(r => {
+          if (r.type === "subject") {
+            return `<div class="p-2 hover:bg-slate-800 cursor-pointer flex items-center gap-2 rounded text-emerald-300" onclick="window.loadSubjectToPatient360('${r.id}'); document.getElementById('globalSearchResults').classList.add('hidden');"><i class="fa-solid fa-hospital-user w-4"></i> Subject: <b>${r.id}</b> (Site ${r.site})</div>`;
+          } else if (r.type === "finding") {
+            return `<div class="p-2 hover:bg-slate-800 cursor-pointer flex items-center gap-2 rounded text-amber-300" onclick="inspectFindingDetail('${r.id}', '${r.subject}'); document.getElementById('globalSearchResults').classList.add('hidden');"><i class="fa-solid fa-triangle-exclamation w-4"></i> Finding: <b>${r.id}</b> (${r.subject})</div>`;
+          } else if (r.type === "evidence") {
+            return `<div class="p-2 hover:bg-slate-800 cursor-pointer flex items-center gap-2 rounded text-indigo-300" onclick="inspectEvidenceKey('${r.id}'); document.getElementById('globalSearchResults').classList.add('hidden');"><i class="fa-solid fa-fingerprint w-4"></i> Record: <span class="font-mono">${r.id}</span></div>`;
+          }
+          return "";
+        }).join("");
+      }
+    }
+  } catch (err) {
+    console.error("Error searching:", err);
+  }
+}
+
+function loadEvidenceTab() {
+  const key = document.getElementById("evidenceInputKey")?.value?.trim();
+  if (!key) return;
+  const parts = key.split("|");
+  if (parts.length === 3) {
+    const d = parts[0];
+    const s = parts[1];
+    const seq = parseInt(parts[2], 10);
+    // Fetch and render in tab
+    fetch(`/api/record?study=${state.currentStudy}&domain=${d}&usubjid=${s}&seq=${seq}&cut=${state.currentCut}`)
+      .then(res => res.json())
+      .then(rec => {
+        const area = document.getElementById("evidenceTabContent");
+        let html = `<div class="text-white font-bold mb-2">Record: ${d} | ${s} | ${seq}</div>`;
+        if (rec.fields) {
+          html += `<table class="w-full text-left border border-slate-700"><tbody class="divide-y divide-slate-700">`;
+          for (const [k, v] of Object.entries(rec.fields)) {
+            html += `<tr><td class="py-1 px-2 font-semibold text-slate-400 w-1/3">${k}</td><td class="py-1 px-2 font-mono">${v??''}</td></tr>`;
+          }
+          html += `</tbody></table>`;
+        }
+        area.innerHTML = html;
+      })
+      .catch(err => {
+         const area = document.getElementById("evidenceTabContent");
+         area.innerHTML = `<div class="text-rose-400"><i class="fa-solid fa-circle-exclamation"></i> Error loading record: ${err.message || 'Not found'}</div>`;
+      });
+  }
+}
+
+window.loadSubjectToPatient360 = function(subj) {
+  const sel = document.getElementById("p360SubjectSelect");
+  if (sel) { sel.value = subj; }
+  switchTab("patient360");
+  loadPatient360();
+};

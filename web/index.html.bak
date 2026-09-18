@@ -64,40 +64,7 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex bg-slate-950 text-slate-100">
-
-  <aside class="w-64 flex-shrink-0 border-r border-slate-800 bg-slate-900/60 flex flex-col hidden md:flex h-screen sticky top-0 overflow-y-auto">
-    <div class="p-6 border-b border-slate-800">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-          <i class="fa-solid fa-shield-halved text-white text-lg"></i>
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="font-extrabold tracking-wider text-lg bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">ATLAS</span>
-          </div>
-          <p class="text-[11px] text-slate-400">Study Sentinel</p>
-        </div>
-      </div>
-    </div>
-    <nav class="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
-      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-3 bg-indigo-500/10 text-indigo-400"><i class="fa-solid fa-chart-pie w-4"></i> Dashboard</button>
-      <button onclick="switchTab('graph')" id="tab-graph" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center gap-3 text-slate-400 hover:bg-slate-800 hover:text-slate-200"><i class="fa-solid fa-diagram-project w-4 text-cyan-400"></i> Study Graph</button>
-      <button onclick="switchTab('patient360')" id="tab-patient360" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center gap-3 text-slate-400 hover:bg-slate-800 hover:text-slate-200"><i class="fa-solid fa-hospital-user w-4 text-emerald-400"></i> Patient 360</button>
-      <button onclick="switchTab('findings')" id="tab-findings" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between text-slate-400 hover:bg-slate-800 hover:text-slate-200">
-        <div class="flex items-center gap-3"><i class="fa-solid fa-triangle-exclamation w-4 text-amber-400"></i> Findings</div>
-        <span id="findingsCountBadge" class="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] rounded-full">0</span>
-      </button>
-      <button onclick="switchTab('queue')" id="tab-queue" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center gap-3 text-slate-400 hover:bg-slate-800 hover:text-slate-200"><i class="fa-solid fa-list-check w-4 text-purple-400"></i> Monitoring Queue</button>
-      <button onclick="switchTab('labexplorer')" id="tab-labexplorer" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center gap-3 text-slate-400 hover:bg-slate-800 hover:text-slate-200"><i class="fa-solid fa-flask w-4 text-cyan-400"></i> Lab Explorer</button>
-      <button onclick="switchTab('cutexplorer')" id="tab-cutexplorer" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center gap-3 text-slate-400 hover:bg-slate-800 hover:text-slate-200"><i class="fa-solid fa-code-compare w-4 text-emerald-400"></i> Cut Explorer</button>
-      <button onclick="switchTab('documents')" id="tab-documents" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center gap-3 text-slate-400 hover:bg-slate-800 hover:text-slate-200"><i class="fa-solid fa-book-medical w-4 text-indigo-400"></i> Protocol</button>
-      <button onclick="switchTab('ask')" id="tab-ask" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center gap-3 text-amber-400 hover:bg-slate-800 hover:text-amber-300 mt-4 border border-amber-500/30"><i class="fa-solid fa-brain w-4"></i> Ask ATLAS</button>
-      <button onclick="switchTab('evidence')" id="tab-evidence" class="w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center gap-3 text-slate-400 hover:bg-slate-800 hover:text-slate-200"><i class="fa-solid fa-fingerprint w-4 text-indigo-400"></i> Evidence</button>
-    </nav>
-  </aside>
-
-<div class="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100">
 
   <!-- TOP HEADER -->
   <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
@@ -117,17 +84,7 @@
 
     <!-- Study, Cut & Protocol Selectors -->
     <div class="flex items-center flex-wrap gap-4">
-      
-      <!-- Global Search -->
-      <div class="relative z-50">
-        <div class="relative">
-          <input type="text" id="globalSearchInput" placeholder="Search subject, finding, evidence..." onkeyup="if(event.key === 'Enter') executeGlobalSearch()" class="bg-slate-950 border border-slate-700 text-xs text-white rounded-lg pl-8 pr-3 py-1.5 w-64 focus:outline-none focus:border-indigo-500" />
-          <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-500 text-xs"></i>
-        </div>
-        <div id="globalSearchResults" class="absolute top-full mt-2 w-96 bg-slate-900 border border-slate-700 rounded-lg shadow-xl hidden max-h-96 overflow-y-auto text-xs p-2 space-y-1"></div>
-      </div>
       <!-- Study Selector -->
-    
       <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
         <i class="fa-solid fa-folder-tree text-indigo-400 text-xs"></i>
         <span class="text-xs text-slate-400">Study:</span>
@@ -160,69 +117,101 @@
       </button>
     </div>
   </header>
-<main class="flex-1 p-6 overflow-y-auto max-w-7xl w-full mx-auto space-y-6">
+
+  <!-- NAVIGATION TABS -->
+  <nav class="border-b border-slate-800 bg-slate-900/60 px-6 flex space-x-1 overflow-x-auto scrollbar-thin">
+    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-4 py-3 text-xs font-semibold flex items-center gap-2 border-b-2 border-indigo-500 text-white">
+      <i class="fa-solid fa-chart-pie text-indigo-400"></i> Dashboard
+    </button>
+    <button onclick="switchTab('graph')" id="tab-graph" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-diagram-project text-cyan-400"></i> Study Graph
+    </button>
+    <button onclick="switchTab('patient360')" id="tab-patient360" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-hospital-user text-emerald-400"></i> Patient 360
+    </button>
+    <button onclick="switchTab('findings')" id="tab-findings" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Findings Registry
+      <span id="findingsCountBadge" class="ml-1 px-1.5 py-0.2 bg-amber-500/20 text-amber-300 text-[10px] rounded-full border border-amber-500/30">0</span>
+    </button>
+    <button onclick="switchTab('ask')" id="tab-ask" class="px-4 py-3 text-xs font-semibold flex items-center gap-2 border-b-2 border-transparent text-amber-400 hover:text-amber-300">
+      <i class="fa-solid fa-brain"></i> Ask ATLAS (Answer Engine)
+    </button>
+    <button onclick="switchTab('queue')" id="tab-queue" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-list-check text-purple-400"></i> Monitoring Queue
+    </button>
+    <button onclick="switchTab('queries')" id="tab-queries" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-comments text-sky-400"></i> Site Queries
+    </button>
+    <button onclick="switchTab('decisions')" id="tab-decisions" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-gavel text-rose-400"></i> Monitor Decisions
+    </button>
+    <button onclick="switchTab('documents')" id="tab-documents" class="px-4 py-3 text-xs font-medium flex items-center gap-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+      <i class="fa-solid fa-book-medical text-indigo-400"></i> Study Documents
+    </button>
+  </nav>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="flex-1 p-6 overflow-y-auto max-w-7xl w-full mx-auto space-y-6">
 
     <!-- TAB 1: DASHBOARD -->
     <section id="view-dashboard" class="space-y-6">
       <!-- Executive Metric Cards -->
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <!-- Subjects -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
           <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Total Subjects</div>
           <div id="metricSubjects" class="text-2xl font-bold text-white mt-1">--</div>
-          <div class="text-[11px] text-emerald-400 flex items-center gap-1 mt-1"><i class="fa-solid fa-users text-[10px]"></i> Active</div>
+          <div class="text-[11px] text-emerald-400 flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-users text-[10px]"></i> Active at this cut
+          </div>
         </div>
 
         <!-- Sites -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
-          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Sites</div>
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Investigational Sites</div>
           <div id="metricSites" class="text-2xl font-bold text-white mt-1">--</div>
-          <div class="text-[11px] text-cyan-400 flex items-center gap-1 mt-1"><i class="fa-solid fa-hospital text-[10px]"></i> Reporting</div>
+          <div class="text-[11px] text-cyan-400 flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-hospital text-[10px]"></i> Reporting sites
+          </div>
         </div>
 
         <!-- Records -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
-          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Records</div>
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Total Records</div>
           <div id="metricRecords" class="text-2xl font-bold text-white mt-1">--</div>
-          <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-1"><i class="fa-solid fa-database text-[10px]"></i> at cut</div>
+          <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-database text-[10px]"></i> cut_available &le; <span class="active-cut-label">1</span>
+          </div>
         </div>
 
         <!-- Protocol -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
-          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Protocol</div>
-          <div id="metricProtocol" class="text-2xl font-bold text-indigo-400 mt-1 uppercase">--</div>
-          <div id="metricVisitWindow" class="text-[11px] text-indigo-400 flex items-center gap-1 mt-1"><i class="fa-solid fa-calendar-day text-[10px]"></i> Window</div>
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Active Protocol</div>
+          <div id="metricProtocol" class="text-xl font-bold text-indigo-400 mt-1 uppercase">v1</div>
+          <div id="metricVisitWindow" class="text-[11px] text-indigo-300/80 flex items-center gap-1 mt-1">
+            &plusmn;7 days window
+          </div>
         </div>
 
         <!-- Corrections -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
-          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Corrections</div>
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Applied Corrections</div>
           <div id="metricCorrections" class="text-2xl font-bold text-amber-400 mt-1">--</div>
-          <div class="text-[11px] text-amber-400/80 flex items-center gap-1 mt-1"><i class="fa-solid fa-pen-to-square text-[10px]"></i> Audits</div>
+          <div class="text-[11px] text-amber-400/80 flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-pen-to-square text-[10px]"></i> Audit trail active
+          </div>
         </div>
 
-        <!-- Total Findings -->
+        <!-- Detected Findings -->
         <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
-          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Findings</div>
+          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Clinical Findings</div>
           <div id="metricFindings" class="text-2xl font-bold text-rose-400 mt-1">--</div>
-          <div class="text-[11px] text-rose-400/80 flex items-center gap-1 mt-1"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> Flagged</div>
-        </div>
-        
-        <!-- SAE Count -->
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
-          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">SAE Count</div>
-          <div id="metricSAEs" class="text-2xl font-bold text-rose-400 mt-1">--</div>
-          <div class="text-[11px] text-rose-400/80 flex items-center gap-1 mt-1"><i class="fa-solid fa-heart-pulse text-[10px]"></i> Serious AE</div>
-        </div>
-        
-        <!-- Dosing Errors -->
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm relative overflow-hidden">
-          <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Dosing Errors</div>
-          <div id="metricDosingErrors" class="text-2xl font-bold text-amber-400 mt-1">--</div>
-          <div class="text-[11px] text-amber-400/80 flex items-center gap-1 mt-1"><i class="fa-solid fa-pills text-[10px]"></i> Invalid Doses</div>
+          <div class="text-[11px] text-rose-400/80 flex items-center gap-1 mt-1">
+            <i class="fa-solid fa-shield-virus text-[10px]"></i> Automated rules
+          </div>
         </div>
       </div>
-      
+
       <!-- Domain Distribution & Cut Progression -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- CDISC Domains Distribution -->
@@ -756,80 +745,6 @@
       </div>
     </section>
 
-  
-    <!-- TAB: LAB EXPLORER -->
-    <section id="view-labexplorer" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-        <h2 class="text-base font-semibold text-white flex items-center gap-2 mb-4"><i class="fa-solid fa-flask text-cyan-400"></i> Laboratory Explorer</h2>
-        <div class="flex flex-wrap gap-3 mb-4">
-          <input type="text" id="labFilterSubject" placeholder="Subject ID" class="bg-slate-800 border border-slate-700 text-xs text-white rounded px-2.5 py-1.5" />
-          <input type="text" id="labFilterTest" placeholder="Test Code" class="bg-slate-800 border border-slate-700 text-xs text-white rounded px-2.5 py-1.5" />
-          <button onclick="loadLabExplorer()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs">Filter</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="border-b border-slate-800 text-slate-400">
-                <th class="py-2.5 px-3">Subject</th>
-                <th class="py-2.5 px-3">Test</th>
-                <th class="py-2.5 px-3">Reported</th>
-                <th class="py-2.5 px-3">Normalized</th>
-                <th class="py-2.5 px-3">Ref Range</th>
-                <th class="py-2.5 px-3">Date</th>
-                <th class="py-2.5 px-3">Evidence</th>
-              </tr>
-            </thead>
-            <tbody id="labExplorerTableBody" class="divide-y divide-slate-800/60"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB: CUT EXPLORER -->
-    <section id="view-cutexplorer" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-        <h2 class="text-base font-semibold text-white flex items-center gap-2 mb-4"><i class="fa-solid fa-code-compare text-emerald-400"></i> Cut Comparison Explorer</h2>
-        <div class="flex items-center gap-4 mb-6">
-          <select id="cutCompareN" class="bg-slate-800 border border-slate-700 text-xs text-white rounded px-3 py-1.5"></select>
-          <span class="text-slate-400">vs</span>
-          <select id="cutCompareM" class="bg-slate-800 border border-slate-700 text-xs text-white rounded px-3 py-1.5"></select>
-          <button onclick="loadCutComparison()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs">Compare</button>
-        </div>
-        <div id="cutCompareResults" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
-            <h3 class="text-sm font-bold text-white mb-2">New Records <span id="cutNewRecordsCount" class="text-xs ml-2 text-slate-400"></span></h3>
-            <div id="cutNewRecordsList" class="space-y-1 text-xs text-slate-300 max-h-64 overflow-y-auto"></div>
-          </div>
-          <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
-            <h3 class="text-sm font-bold text-white mb-2">Corrected Records <span id="cutCorrectedCount" class="text-xs ml-2 text-slate-400"></span></h3>
-            <div id="cutCorrectedList" class="space-y-1 text-xs text-slate-300 max-h-64 overflow-y-auto"></div>
-          </div>
-          <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
-            <h3 class="text-sm font-bold text-white mb-2">New Findings <span id="cutNewFindingsCount" class="text-xs ml-2 text-slate-400"></span></h3>
-            <div id="cutNewFindingsList" class="space-y-1 text-xs text-slate-300 max-h-64 overflow-y-auto"></div>
-          </div>
-          <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
-            <h3 class="text-sm font-bold text-white mb-2">Resolved Findings <span id="cutResolvedFindingsCount" class="text-xs ml-2 text-slate-400"></span></h3>
-            <div id="cutResolvedFindingsList" class="space-y-1 text-xs text-slate-300 max-h-64 overflow-y-auto"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB: EVIDENCE -->
-    <section id="view-evidence" class="hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-        <h2 class="text-base font-semibold text-white flex items-center gap-2 mb-4"><i class="fa-solid fa-fingerprint text-indigo-400"></i> Evidence Viewer</h2>
-        <div class="flex items-center gap-3 mb-4">
-          <input type="text" id="evidenceInputKey" placeholder="DOMAIN|USUBJID|SEQ" class="bg-slate-800 border border-slate-700 text-xs text-white rounded px-3 py-1.5 w-64" />
-          <button onclick="loadEvidenceTab()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs">Load</button>
-        </div>
-        <div id="evidenceTabContent" class="bg-slate-950 border border-slate-800 rounded-lg p-4 text-xs text-slate-300">
-          Enter an evidence identity to view the record.
-        </div>
-      </div>
-    </section>
-
   </main>
 
   <!-- EVIDENCE INSPECTION MODAL -->
@@ -863,7 +778,6 @@
   </div>
 
   <!-- CLIENT-SIDE APPLICATION JAVASCRIPT -->
-  </div>
   <script src="/app.js"></script>
 </body>
 </html>

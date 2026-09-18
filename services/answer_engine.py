@@ -212,17 +212,54 @@ class AnswerEngine:
                 )
                 clinical_rationale = f"Traversed StudyGraph for all {dom} domain records."
 
+        # Handle TRAP / NO-FINDING
+        if q_type != QuestionType.STUDY_STATISTICS and not findings_data and not supporting_records and not evidence_references:
+            direct_answer = "None found."
+
+        # Count mapping
+        count_val = None
+        q_lower = question.lower()
+        is_count_q = any(w in q_lower for w in ["count", "how many"])
+
+        if q_type == QuestionType.STUDY_STATISTICS:
+            if entities.domain:
+                count_val = stats['domain_record_counts'].get(entities.domain, 0)
+            else:
+                count_val = stats['total_records']
+        elif is_count_q:
+            if "subject" in q_lower or "subjects" in q_lower:
+                if findings_data:
+                    subjects_with_findings = set(f.get('subject_id') for f in findings_data if f.get('subject_id'))
+                    count_val = len(subjects_with_findings)
+                    direct_answer = f"{count_val} subject(s) match the criteria."
+                elif supporting_records:
+                    subjects_with_recs = set(r.get('USUBJID') for r in supporting_records if r.get('USUBJID'))
+                    count_val = len(subjects_with_recs)
+                    direct_answer = f"{count_val} subject(s) match the criteria."
+                else:
+                    count_val = 0
+            else:
+                if findings_data:
+                    count_val = len(findings_data)
+                    direct_answer = f"Found {count_val} matching finding(s)."
+                elif supporting_records:
+                    count_val = len(supporting_records)
+                    direct_answer = f"Found {count_val} matching record(s)."
+                else:
+                    count_val = 0
+
         return AnswerResponse(
             question=question,
             question_type=q_type,
             entities=entities,
-            direct_answer=direct_answer,
+            answer=direct_answer,
             protocol_version=protocol_version,
             cut=eval_cut,
-            evidence_references=evidence_references,
+            count=count_val,
+            evidence=evidence_references,
             supporting_records=supporting_records,
             findings=findings_data,
-            site_replies=site_replies,
-            monitor_decisions=monitor_decisions,
-            clinical_rationale=clinical_rationale,
+            site_reply=site_replies,
+            monitor_decision=monitor_decisions,
+            explanation=clinical_rationale,
         )

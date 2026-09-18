@@ -270,6 +270,115 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             self.send_json(answer_res.to_dict())
             return
 
+        # 12. Global Search
+        if path == "/api/search":
+            query_str = q("q", "").lower()
+            results = []
+            if query_str:
+                # Search Subjects
+                for s in graph.get_all_subjects(cut=cut):
+                    if query_str in s.usubjid.lower() or query_str in s.site_id.lower():
+                        results.append({"type": "subject", "id": s.usubjid, "site": s.site_id})
+                # Search Findings
+                all_findings = CACHE.finding_engine.evaluate_study(graph, cut=cut)
+                for f in all_findings:
+                    if query_str in f.finding_code.lower() or query_str in f.domain.lower() or any(query_str in str(ev).lower() for ev in f.evidence_references):
+                        results.append({"type": "finding", "id": f.finding_code, "subject": f.subject, "domain": f.domain})
+                # Search Evidence (Identity: DOMAIN|USUBJID|SEQ)
+                for (d, subj, seq), rec in graph._record_index.items():
+                    if rec.cut_available <= cut:
+                        ident = f"{d}|{subj}|{seq}".lower()
+                        if query_str in ident or query_str in d.lower():
+                            results.append({"type": "evidence", "id": f"{d}|{subj}|{seq}", "domain": d, "subject": subj})
+            self.send_json({"query": query_str, "results": results[:50]})
+            return
+
+        # 13. Lab Explorer
+        if path == "/api/labs":
+            subject_filter = q("subject")
+            site_filter = q("site")
+            test_filter = q("test")
+            lab_filter = q("lab")
+            labs_data = []
+            
+            for (d, subj, seq), rec in graph._record_index.items():
+                if d == "LB" and rec.cut_available <= cut:
+                    if subject_filter and subj != subject_filter:
+                        continue
+                    # get subject node for site
+                    subj_node = graph.get_subject(subj, cut=cut)
+                    if site_filter and (not subj_node or subj_node.site_id != site_filter):
+                        continue
+                    
+                    fields = rec.fields
+                    test_code = fields.get("LBTESTCD") or fields.get("LBTEST") or ""
+                    if test_filter and test_filter.lower() not in test_code.lower():
+                        continue
+                    lab_name = fields.get("LBNAM") or ""
+                    if lab_filter and lab_filter.lower() not in lab_name.lower():
+                        continue
+                        
+                    interp = graph.interpret_lab_record(rec)
+                    labs_data.append({
+                        "subject": subj,
+                        "site": subj_node.site_id if subj_node else "",
+                        "test": test_code,
+                        "reported_value": fields.get("LBORRES"),
+                        "reported_unit": fields.get("LBORRESU"),
+                        "normalized_value": interp.normalized_value,
+                        "normalized_unit": interp.normalized_unit,
+                        "ref_low": interp.ref_low,
+                        "ref_high": interp.ref_high,
+                        "lab": lab_name,
+                        "date": fields.get("LBDTC"),
+                        "evidence": f"LB|{subj}|{seq}"
+                    })
+            self.send_json({"labs": labs_data})
+            return
+
+        # 14. Cut Comparison
+        if path == "/api/compare_cuts":
+            cut_n = int(q("cut_n", 1))
+            cut_m = int(q("cut_m", 2))
+            
+            n_stats = GraphStatistics.calculate(graph, cut=cut_n)
+            m_stats = GraphStatistics.calculate(graph, cut=cut_m)
+            
+            # Find new records
+            new_records = []
+            for (d, subj, seq), rec in graph._record_index.items():
+                if cut_n < rec.cut_available <= cut_m:
+                    new_records.append(f"{d}|{subj}|{seq}")
+            
+            # Find corrected records
+            corrected_records = []
+            for (d, subj, seq), corrs in graph.correction_service._corrections.items():
+                for c in corrs:
+                    if cut_n < c.correction_cut <= cut_m:
+                        corrected_records.append({"evidence": f"{d}|{subj}|{seq}", "field": c.field_name, "old": c.original_value, "new": c.corrected_value})
+            
+            # Find findings differences
+            n_findings = CACHE.finding_engine.evaluate_study(graph, cut=cut_n)
+            m_findings = CACHE.finding_engine.evaluate_study(graph, cut=cut_m)
+            
+            n_find_keys = {f"{f.finding_code}|{f.subject}" for f in n_findings}
+            m_find_keys = {f"{f.finding_code}|{f.subject}" for f in m_findings}
+            
+            new_findings = list(m_find_keys - n_find_keys)
+            resolved_findings = list(n_find_keys - m_find_keys)
+            
+            self.send_json({
+                "cut_n": cut_n,
+                "cut_m": cut_m,
+                "protocol_n": n_stats["protocol_version"],
+                "protocol_m": m_stats["protocol_version"],
+                "new_records": new_records,
+                "corrected_records": corrected_records,
+                "new_findings": new_findings,
+                "resolved_findings": resolved_findings
+            })
+            return
+
         self.send_error(404, f"API endpoint not found: {path}")
 
     def do_POST(self):

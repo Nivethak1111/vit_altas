@@ -103,12 +103,12 @@ class QueryUnderstandingService:
     def classify_question_type(cls, question: str, entities: ExtractedEntities) -> str:
         q_lower = question.lower()
 
-        # Check for statistics
-        if any(w in q_lower for w in cls.STATISTICS_KEYWORDS) and not entities.subject_id:
-            return QuestionType.STUDY_STATISTICS
-
         has_rule_kw = any(w in q_lower for w in cls.RULE_KEYWORDS)
         has_resp_kw = any(w in q_lower for w in cls.RESPONSE_KEYWORDS)
+
+        # Check for count statistics specifically without rules
+        if any(w in q_lower for w in cls.STATISTICS_KEYWORDS) and not entities.subject_id and not has_rule_kw:
+            return QuestionType.STUDY_STATISTICS
 
         if has_rule_kw and (has_resp_kw or "why" in q_lower or entities.subject_id):
             return QuestionType.HYBRID_MONITORING
