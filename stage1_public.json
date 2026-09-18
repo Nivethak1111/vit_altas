@@ -1,0 +1,238 @@
+[
+  {
+    "question_id": "Q1",
+    "answer": "0 subject(s) match the criteria.",
+    "text": "Derived by Finding Engine applying Protocol V3 criteria.",
+    "evidence": [
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-002",
+        "seq": 1
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-003",
+        "seq": 1
+      }
+    ]
+  },
+  {
+    "question_id": "Q2",
+    "answer": null,
+    "text": "Evaluated across all active clinical monitoring rules.",
+    "evidence": []
+  },
+  {
+    "question_id": "Q3",
+    "answer": "Identified 11 clinical finding(s) under Protocol V3 at Cut 3: VISIT_WINDOW_DEVIATION: Visit Window Out-of-Range: WEEK 4 occurred on Study Day 40 (+12 days from target Day 28). Active V3 allows \u00b13 days.; SAE_DISCREPANCY_AESHOSP: SAE Discrepancy: Event 'Acute Chest Pain requiring hospitalization' has hospitalization marked (AESHOSP=Y) but site marked AESER='N'. By protocol definition, hospitalization mandates classification as a Serious Adverse Event.; SAE_REPORTING_DELAY: SAE Reporting Delay: Serious event 'Acute Chest Pain requiring hospitalization' reported 54.0 hours after awareness date (2024-02-10T08:00 -> 2024-02-12T14:00), exceeding the mandatory 24-hour protocol reporting window..",
+    "text": "Derived by Finding Engine applying Protocol V3 criteria.",
+    "evidence": [
+      {
+        "domain": "VS",
+        "usubjid": "STUDY042-101-001",
+        "seq": 3
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-002",
+        "seq": 1
+      },
+      {
+        "domain": "VS",
+        "usubjid": "STUDY042-101-002",
+        "seq": 3
+      },
+      {
+        "domain": "LB",
+        "usubjid": "STUDY042-102-001",
+        "seq": 4
+      },
+      {
+        "domain": "LB",
+        "usubjid": "STUDY042-102-001",
+        "seq": 5
+      },
+      {
+        "domain": "CM",
+        "usubjid": "STUDY042-103-001",
+        "seq": 1
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-003",
+        "seq": 1
+      },
+      {
+        "domain": "DM",
+        "usubjid": "STUDY042-101-003",
+        "seq": 1
+      },
+      {
+        "domain": "CM",
+        "usubjid": "STUDY042-102-002",
+        "seq": 1
+      },
+      {
+        "domain": "CM",
+        "usubjid": "STUDY042-103-002",
+        "seq": 1
+      },
+      {
+        "domain": "LB",
+        "usubjid": "STUDY042-103-002",
+        "seq": 2
+      }
+    ]
+  },
+  {
+    "question_id": "Q4",
+    "answer": "Study STUDY-042 at Cut 3 (active Protocol V3) contains 7 enrolled subjects across 3 investigational sites, with 90 clinical records available. Domain breakdown: AE: 6, CM: 6, DM: 7, DS: 6, EG: 12, EX: 6, LB: 24, MH: 9, VS: 14. Total applied corrections: 3.",
+    "text": "Generated from dynamic StudyGraph statistics engine.",
+    "evidence": []
+  },
+  {
+    "question_id": "Q5",
+    "answer": "A total of 6 AE records are available in the study at Cut 3.",
+    "text": "Traversed StudyGraph for all AE domain records.",
+    "evidence": [
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-001",
+        "seq": 1
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-002",
+        "seq": 1
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-003",
+        "seq": 1
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-102-001",
+        "seq": 1
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-102-001",
+        "seq": 2
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-103-001",
+        "seq": 1
+      }
+    ]
+  },
+  {
+    "question_id": "Q6",
+    "answer": "Study STUDY-042 at Cut 3 (active Protocol V3) contains 7 enrolled subjects across 3 investigational sites, with 90 clinical records available. Domain breakdown: AE: 6, CM: 6, DM: 7, DS: 6, EG: 12, EX: 6, LB: 24, MH: 9, VS: 14. Total applied corrections: 3.",
+    "text": "Generated from dynamic StudyGraph statistics engine.",
+    "evidence": []
+  },
+  {
+    "question_id": "Q7",
+    "answer": "Identified 2 clinical finding(s) under Protocol V3 at Cut 3: PROHIBITED_MED_GLUCOCORTICOID: Prohibited Concomitant Medication: 'PREDNISONE' (Class: 'GLUCOCORTICOIDS') is a systemic glucocorticoid prohibited under Protocol V3.; PROHIBITED_MED_SULFONYLUREA: Prohibited Concomitant Medication: 'GLIMEPIRIDE' (Class: 'SULFONYLUREAS') is a sulfonylurea newly prohibited under Amendment V3..",
+    "text": "Derived by Finding Engine applying Protocol V3 criteria.",
+    "evidence": [
+      {
+        "domain": "CM",
+        "usubjid": "STUDY042-103-001",
+        "seq": 1
+      },
+      {
+        "domain": "CM",
+        "usubjid": "STUDY042-103-002",
+        "seq": 1
+      }
+    ]
+  },
+  {
+    "question_id": "Q8",
+    "answer": "Identified 3 clinical finding(s) under Protocol V3 at Cut 3: SAE_DISCREPANCY_AESHOSP: SAE Discrepancy: Event 'Acute Chest Pain requiring hospitalization' has hospitalization marked (AESHOSP=Y) but site marked AESER='N'. By protocol definition, hospitalization mandates classification as a Serious Adverse Event.; SAE_REPORTING_DELAY: SAE Reporting Delay: Serious event 'Acute Chest Pain requiring hospitalization' reported 54.0 hours after awareness date (2024-02-10T08:00 -> 2024-02-12T14:00), exceeding the mandatory 24-hour protocol reporting window.; SAE_REPORTING_DATE_MISSING: SAE Reporting Review: Serious event 'Femur fracture from fall' has no documented SAE report date to verify the required 24-hour initial reporting timeline..",
+    "text": "Derived by Finding Engine applying Protocol V3 criteria.",
+    "evidence": [
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-002",
+        "seq": 1
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-003",
+        "seq": 1
+      }
+    ]
+  },
+  {
+    "question_id": "Q9",
+    "answer": "Identified 11 clinical finding(s) under Protocol V3 at Cut 3: VISIT_WINDOW_DEVIATION: Visit Window Out-of-Range: WEEK 4 occurred on Study Day 40 (+12 days from target Day 28). Active V3 allows \u00b13 days.; SAE_DISCREPANCY_AESHOSP: SAE Discrepancy: Event 'Acute Chest Pain requiring hospitalization' has hospitalization marked (AESHOSP=Y) but site marked AESER='N'. By protocol definition, hospitalization mandates classification as a Serious Adverse Event.; SAE_REPORTING_DELAY: SAE Reporting Delay: Serious event 'Acute Chest Pain requiring hospitalization' reported 54.0 hours after awareness date (2024-02-10T08:00 -> 2024-02-12T14:00), exceeding the mandatory 24-hour protocol reporting window..",
+    "text": "Derived by Finding Engine applying Protocol V3 criteria.",
+    "evidence": [
+      {
+        "domain": "VS",
+        "usubjid": "STUDY042-101-001",
+        "seq": 3
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-002",
+        "seq": 1
+      },
+      {
+        "domain": "VS",
+        "usubjid": "STUDY042-101-002",
+        "seq": 3
+      },
+      {
+        "domain": "LB",
+        "usubjid": "STUDY042-102-001",
+        "seq": 4
+      },
+      {
+        "domain": "LB",
+        "usubjid": "STUDY042-102-001",
+        "seq": 5
+      },
+      {
+        "domain": "CM",
+        "usubjid": "STUDY042-103-001",
+        "seq": 1
+      },
+      {
+        "domain": "AE",
+        "usubjid": "STUDY042-101-003",
+        "seq": 1
+      },
+      {
+        "domain": "DM",
+        "usubjid": "STUDY042-101-003",
+        "seq": 1
+      },
+      {
+        "domain": "CM",
+        "usubjid": "STUDY042-102-002",
+        "seq": 1
+      },
+      {
+        "domain": "CM",
+        "usubjid": "STUDY042-103-002",
+        "seq": 1
+      },
+      {
+        "domain": "LB",
+        "usubjid": "STUDY042-103-002",
+        "seq": 2
+      }
+    ]
+  },
+  {
+    "question_id": "Q10",
+    "answer": "Study STUDY-042 at Cut 3 (active Protocol V3) contains 7 enrolled subjects across 3 investigational sites, with 90 clinical records available. Domain breakdown: AE: 6, CM: 6, DM: 7, DS: 6, EG: 12, EX: 6, LB: 24, MH: 9, VS: 14. Total applied corrections: 3.",
+    "text": "Generated from dynamic StudyGraph statistics engine.",
+    "evidence": []
+  }
+]
