@@ -379,18 +379,69 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             })
             return
 
+        # 15. Stage 2 GET Endpoints
+        if path == "/api/cycle_report":
+            # Just serve the latest report saved by ReviewCrew
+            store_path = BASE_DIR / "data" / "cycle_report.json"
+            if store_path.exists():
+                with open(store_path, "r") as f:
+                    self.send_json(json.load(f))
+            else:
+                self.send_json({"error": "No cycle report found"}, status=404)
+            return
+            
+        if path == "/api/trace":
+            store_path = BASE_DIR / "data" / "trace.json"
+            if store_path.exists():
+                with open(store_path, "r") as f:
+                    self.send_json({"trace": json.load(f)})
+            else:
+                self.send_json({"trace": []})
+            return
+            
+        if path == "/api/queries_list": # Re-mapped to avoid conflict with /api/query which is POST
+            store_path = BASE_DIR / "data" / "queries_store.json"
+            if store_path.exists():
+                with open(store_path, "r") as f:
+                    self.send_json({"queries": json.load(f)})
+            else:
+                self.send_json({"queries": []})
+            return
+            
+        if path == "/api/pending_escalations":
+            store_path = BASE_DIR / "data" / "escalations_store.json"
+            if store_path.exists():
+                with open(store_path, "r") as f:
+                    escs = json.load(f)
+                    pending = {k: v for k, v in escs.items() if v.get("decision") == "CLARIFY"}
+                    self.send_json({"pending": pending})
+            else:
+                self.send_json({"pending": {}})
+            return
+            
+        if path == "/api/memory":
+            store_path = BASE_DIR / "data" / "crew_memory.json"
+            if store_path.exists():
+                with open(store_path, "r") as f:
+                    self.send_json(json.load(f))
+            else:
+                self.send_json({"memory": {}})
+            return
+
         self.send_error(404, f"API endpoint not found: {path}")
 
     def do_POST(self):
         parsed = urlparse(self.path)
         path = parsed.path
+        
+        content_length = int(self.headers.get("Content-Length", 0))
+        body_bytes = self.rfile.read(content_length)
+        try:
+            data = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
+        except Exception:
+            data = {}
+            
         if path == "/api/query":
-            content_length = int(self.headers.get("Content-Length", 0))
-            body_bytes = self.rfile.read(content_length)
-            try:
-                data = json.loads(body_bytes.decode("utf-8")) if body_bytes else {}
-            except Exception:
-                data = {}
             question = data.get("question") or data.get("q", "")
             study_id = data.get("study", "STUDY-042")
             cut = data.get("cut")
@@ -403,6 +454,105 @@ class AtlasRequestHandler(SimpleHTTPRequestHandler):
             res = engine.answer(question, cut=cut)
             self.send_json(res.to_dict())
             return
+            
+        elif path == "/api/queries":
+            # Data Manager POSTs queries here
+            # Append to a file-backed store
+            store_path = BASE_DIR / "data" / "queries_store.json"
+            queries = []
+            if store_path.exists():
+                with open(store_path, "r") as f:
+                    try: queries = json.load(f)
+                    except: pass
+            
+            # Simple identity check
+            new_id = f"Q-{len(queries)+1:04d}"
+            query_record = {
+                "id": new_id,
+                "usubjid": data.get("usubjid"),
+                "domain": data.get("domain"),
+                "seq": data.get("seq"),
+                "cut": data.get("cut"),
+                "text": data.get("text"),
+                "status": "OPEN"
+            }
+            queries.append(query_record)
+            with open(store_path, "w") as f:
+                json.dump(queries, f, indent=2)
+            
+            self.send_json({"status": "created", "query": query_record})
+            return
+            
+        elif path == "/api/escalations":
+            # Human Gate POSTs escalations here
+            store_path = BASE_DIR / "data" / "escalations_store.json"
+            escalations = {}
+            if store_path.exists():
+                with open(store_path, "r") as f:
+                    try: escalations = json.load(f)
+                    except: pass
+                    
+            code = data.get("code", "")
+            usubjid = data.get("usubjid", "")
+            escalation_key = f"{code}|{usubjid}"
+            
+            if escalation_key not in escalations:
+                escalations[escalation_key] = {"count": 1, "history": [data]}
+            else:
+                escalations[escalation_key]["count"] += 1
+                escalations[escalation_key]["history"].append(data)
+                
+            count = escalations[escalation_key]["count"]
+            
+            # Simulate monitor replies based on count and code
+            if "SAE" in code or "HYS_LAW" in code:
+                if count == 1:
+                    decision = "CLARIFY"
+                    reason = "What was the ALT at screening, and is there a concomitant hepatotoxic medication?" if "HYS_LAW" in code else "Please provide more details from the source record."
+                else:
+                    decision = "APPROVED"
+                    reason = "Action approved after clarification."
+            else:
+                decision = "REJECTED" if count % 2 == 0 else "APPROVED"
+                reason = "Routine decision"
+                
+            escalations[escalation_key]["decision"] = decision
+            escalations[escalation_key]["reason"] = reason
+            
+            with open(store_path, "w") as f:
+                json.dump(escalations, f, indent=2)
+                
+            self.send_json({"id": f"E-{len(escalations):04d}", "decision": decision, "reason": reason})
+            return
+            
+            
+        elif path == "/api/run_cycle":
+            cut = data.get("cut", 1)
+            study_id = data.get("study", "STUDY-042")
+            graph = CACHE.get_study(study_id)
+            protocol_version = graph.get_protocol_for_cut(cut)
+            # ensure integer
+            if isinstance(protocol_version, str):
+                try: protocol_version = int(protocol_version.replace('V', '').replace('v', ''))
+                except: protocol_version = 1
+                
+            from stage1.atlas import Atlas
+            from stage2.crew import ReviewCrew
+            
+            atlas = Atlas(graph)
+            # Hub and Gateway URL simulate local monitor endpoints
+            crew = ReviewCrew(
+                hub_url="http://localhost:8080/api",
+                gateway_url="http://localhost:8080/api",
+                team_key="local-test",
+                atlas=atlas
+            )
+            report = crew.run_cycle(cut=cut, protocol_version=protocol_version)
+            
+            # report is a ReviewReport dataclass, send it as dict
+            self.send_json(report.__dict__)
+            return
+            
         self.send_error(404, f"POST endpoint not found: {path}")
 
     def send_json(self, data: dict, status: int = 200):

@@ -41,6 +41,12 @@ async function refreshAll() {
   if (state.activeTab === "documents") await loadDocuments();
   if (state.activeTab === "labexplorer") await loadLabExplorer();
   if (state.activeTab === "cutexplorer") await initCutComparison();
+  
+  // Stage 2
+  if (state.activeTab === "humangate") await loadHumanGate();
+  if (state.activeTab === "cyclereport") await loadCycleReport();
+  if (state.activeTab === "trace") await loadTrace();
+  if (state.activeTab === "queries") await loadQueries2(); // Overriding for Stage 2
 }
 
 function updateCutBadges() {
@@ -1378,6 +1384,252 @@ async function executeGlobalSearch() {
   } catch (err) {
     console.error("Error searching:", err);
   }
+}
+window.loadEvidenceTab = loadEvidenceTab;
+
+// ============================================================================
+// STAGE 2 / PROBLEM 2 LOGIC
+// ============================================================================
+
+async function updateMemoryState() {
+  try {
+    const res = await fetch("/api/memory");
+    const data = await res.json();
+    const mem = data || {};
+    document.getElementById("memoryQueries").textContent = `${(mem.query_history || []).length} Queries remembered`;
+    document.getElementById("memoryEscalations").textContent = `${(mem.escalation_history || []).length} Escalations remembered`;
+    document.getElementById("memorySubjects").textContent = `${Object.keys(mem.subject_flags || {}).length} Subjects with repeated findings`;
+    document.getElementById("memorySites").textContent = `${Object.keys(mem.site_flags || {}).length} Sites with recurring problems`;
+  } catch (err) {
+    console.error("Error loading memory state:", err);
+  }
+}
+
+async function runReviewCycle() {
+  try {
+    const btn = document.querySelector("#view-humangate button");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Running...`;
+    btn.disabled = true;
+    
+    await fetch("/api/run_cycle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ study: state.currentStudy, cut: state.currentCut })
+    });
+    
+    btn.innerHTML = `<i class="fa-solid fa-check mr-1"></i> Done`;
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }, 2000);
+    
+    await refreshAll();
+  } catch(err) {
+    console.error("Error running cycle:", err);
+    alert("Error running cycle");
+  }
+}
+
+async function loadHumanGate() {
+  await updateMemoryState();
+  try {
+    const res = await fetch("/api/pending_escalations");
+    const data = await res.json();
+    const pending = data.pending || {};
+    
+    const tbody = document.getElementById("escalationsTableBody");
+    const countBadge = document.getElementById("pendingCount");
+    
+    const keys = Object.keys(pending);
+    countBadge.textContent = `${keys.length} pending`;
+    
+    if (keys.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-slate-500 italic">No pending escalations. Run Review Cycle to generate drafts.</td></tr>`;
+      return;
+    }
+    
+    tbody.innerHTML = keys.map(k => {
+      const p = pending[k];
+      const code = k.split("|")[0];
+      const subjOrSite = k.split("|")[1];
+      
+      const history = p.history || [];
+      const latest = history[history.length - 1] || {};
+      const summary = latest.summary || "";
+      const evidence = latest.evidence || [];
+      
+      const evButtons = evidence.map(e => `<button onclick="openEvidenceModal2('${e.domain}|${e.usubjid}|${e.seq}')" class="text-indigo-400 hover:text-indigo-300 mr-2 underline">${e.domain}|${e.usubjid}|${e.seq}</button>`).join("");
+      
+      return `
+        <tr class="hover:bg-slate-900/80 transition-colors">
+          <td class="py-2.5 px-4 font-medium text-white">${code}</td>
+          <td class="py-2.5 px-4 text-slate-300">${subjOrSite}</td>
+          <td class="py-2.5 px-4 whitespace-normal min-w-[300px]">
+            <div class="text-slate-300 mb-1 leading-relaxed">${summary}</div>
+            <div class="text-[10px] font-mono mt-2 p-2 bg-slate-950 rounded">${evButtons || 'No direct evidence linked'}</div>
+          </td>
+          <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded text-[10px] bg-rose-500/20 text-rose-300 font-bold">${p.decision || "PENDING"}</span></td>
+          <td class="py-2.5 px-4 align-top">
+            <div class="flex flex-col gap-2 w-24">
+              <button onclick="respondEscalation('${code}', '${subjOrSite}', 'APPROVED')" class="px-2 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded shadow text-[10px] font-semibold w-full">APPROVE</button>
+              <button onclick="respondEscalation('${code}', '${subjOrSite}', 'REJECTED')" class="px-2 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded shadow text-[10px] font-semibold w-full">REJECT</button>
+              <button onclick="respondEscalation('${code}', '${subjOrSite}', 'CLARIFY')" class="px-2 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded shadow text-[10px] font-semibold w-full">CLARIFY</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  } catch (err) {
+    console.error("Error loading human gate:", err);
+  }
+}
+
+async function respondEscalation(code, usubjid, manualDecision) {
+    const payload = {
+        code: code,
+        usubjid: usubjid,
+        severity: "CRITICAL",
+        summary: `Monitor replied: ${manualDecision}.`,
+        evidence: []
+    };
+    
+    await fetch("/api/escalations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    
+    await refreshAll();
+}
+
+async function loadCycleReport() {
+  try {
+    const res = await fetch("/api/cycle_report");
+    if (!res.ok) {
+       document.getElementById("reportSummaryCards").innerHTML = `<div class="col-span-4 text-slate-400 p-4">No cycle report available. Run a cycle first.</div>`;
+       return;
+    }
+    const r = await res.json();
+    
+    document.getElementById("reportSummaryCards").innerHTML = `
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+          <div class="text-[11px] font-medium text-slate-400 uppercase">Cut & Protocol</div>
+          <div class="text-xl font-bold text-white mt-1">Cut ${r.cut} <span class="text-sm text-indigo-400 ml-2">v${r.protocol_version}</span></div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+          <div class="text-[11px] font-medium text-slate-400 uppercase">Total Findings</div>
+          <div class="text-xl font-bold text-white mt-1">${r.total_findings || 0}</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+          <div class="text-[11px] font-medium text-slate-400 uppercase">Queries Raised</div>
+          <div class="text-xl font-bold text-blue-400 mt-1">${r.queries || 0}</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+          <div class="text-[11px] font-medium text-slate-400 uppercase">Escalations</div>
+          <div class="text-xl font-bold text-rose-400 mt-1">${r.medical_escalations || 0}</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+          <div class="text-[11px] font-medium text-slate-400 uppercase">Compliance Deviations</div>
+          <div class="text-xl font-bold text-amber-400 mt-1">${r.compliance_deviations || 0}</div>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-sm">
+          <div class="text-[11px] font-medium text-slate-400 uppercase">Monitoring-only Signals</div>
+          <div class="text-xl font-bold text-emerald-400 mt-1">${(r.monitoring_only_findings || []).length}</div>
+        </div>
+    `;
+    
+    const actionsList = document.getElementById("reportActionsList");
+    actionsList.innerHTML = (r.executed_actions || []).map(a => `<li><i class="fa-solid fa-check text-emerald-400 mr-2"></i> <strong class="text-white">${a.id}</strong>: <span class="text-slate-400">${a.action}</span></li>`).join("");
+    if (!actionsList.innerHTML) actionsList.innerHTML = `<li class="text-slate-500 italic">No executed actions.</li>`;
+    
+  } catch(err) {
+    console.error(err);
+  }
+}
+
+async function loadQueries2() {
+  try {
+    const res = await fetch("/api/queries_list");
+    const data = await res.json();
+    const queries = data.queries || [];
+    
+    const tbody = document.getElementById("queriesTableBody");
+    if (queries.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-8 text-center text-slate-500 italic">No queries generated.</td></tr>`;
+      return;
+    }
+    
+    tbody.innerHTML = queries.map(q => {
+      return `
+        <tr class="hover:bg-slate-900/80 transition-colors">
+          <td class="py-2.5 px-4 font-mono text-sky-400 font-semibold align-top">${q.id}</td>
+          <td class="py-2.5 px-4 text-slate-300 align-top">${q.usubjid} <span class="text-slate-500 ml-1">(${q.domain})</span></td>
+          <td class="py-2.5 px-4 text-slate-300 whitespace-normal max-w-lg leading-relaxed">${q.text}</td>
+          <td class="py-2.5 px-4 align-top"><span class="px-2 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-300 font-bold">${q.status || "OPEN"}</span></td>
+        </tr>
+      `;
+    }).join("");
+  } catch(err) {
+    console.error(err);
+  }
+}
+
+async function loadTrace() {
+  try {
+    const res = await fetch("/api/trace");
+    const data = await res.json();
+    const trace = data.trace || [];
+    
+    const list = document.getElementById("traceList");
+    if (trace.length === 0) {
+      list.innerHTML = `<li class="text-center text-slate-500 italic py-4">No trace available.</li>`;
+      return;
+    }
+    
+    const counts = { detect: 0, medical_review: 0, data_manager: 0, compliance: 0, human_gate: 0, execute: 0 };
+    trace.forEach(t => { if(counts[t.node] !== undefined) counts[t.node]++; });
+    
+    ["detect", "medical", "data", "compliance", "human", "execute"].forEach(n => {
+        const el = document.getElementById(`tl-${n}`);
+        if(el) {
+            const mapName = n === "medical" ? "medical_review" : n === "data" ? "data_manager" : n === "human" ? "human_gate" : n;
+            if (counts[mapName] > 0) {
+                el.classList.remove("bg-slate-800", "text-slate-300");
+                el.classList.add("bg-amber-500", "text-slate-900", "shadow-[0_0_10px_rgba(245,158,11,0.5)]");
+            } else {
+                el.classList.remove("bg-amber-500", "text-slate-900", "shadow-[0_0_10px_rgba(245,158,11,0.5)]");
+                el.classList.add("bg-slate-800", "text-slate-300");
+            }
+        }
+    });
+    
+    list.innerHTML = trace.map(t => {
+      const evs = (t.evidence && t.evidence.length > 0) ? `<div class="text-[10px] font-mono text-indigo-400 mt-2 bg-slate-950 p-2 rounded inline-block cursor-pointer" onclick="openEvidenceModal2('${t.evidence[0]}')">Evidence: ${t.evidence.join(', ')}</div>` : "";
+      return `
+        <li class="pl-4 border-l-2 border-slate-700 pb-4 relative">
+            <div class="absolute w-2 h-2 bg-amber-500 rounded-full -left-[5px] top-1"></div>
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 uppercase">${t.node}</span>
+                <span class="text-[10px] text-slate-500">${new Date(t.timestamp).toLocaleTimeString()} (Cut ${t.cut}, v${t.protocol_version})</span>
+            </div>
+            <div class="text-sm text-slate-200 whitespace-normal leading-relaxed">${t.action}</div>
+            ${evs}
+        </li>
+      `;
+    }).join("");
+    
+  } catch(err) {
+    console.error(err);
+  }
+}
+
+function openEvidenceModal2(identity) {
+    if(typeof window.inspectEvidenceKey === 'function') {
+        window.inspectEvidenceKey(identity);
+    } else {
+        alert("Evidence: " + identity);
+    }
 }
 
 function loadEvidenceTab() {

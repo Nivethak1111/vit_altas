@@ -224,13 +224,13 @@ class TestAtlasCore(unittest.TestCase):
         # Factual query
         res_fact = engine.answer("What is the assigned arm for subject STUDY042-101-001?", cut=1)
         self.assertEqual(res_fact.question_type, "FACTUAL_RETRIEVAL")
-        self.assertIn("Drug 10mg", res_fact.direct_answer)
+        self.assertIn("Drug 10mg", res_fact.answer)
         self.assertIn("DM|STUDY042-101-001|1", res_fact.evidence_references)
 
         # Rule evaluation query
         res_rule = engine.answer("Are there any serious adverse event discrepancies?", cut=1)
         self.assertEqual(res_rule.question_type, "RULE_EVALUATION")
-        self.assertIn("SAE_DISCREPANCY", res_rule.direct_answer)
+        self.assertIn("SAE_DISCREPANCY", res_rule.answer)
         self.assertGreater(len(res_rule.evidence_references), 0)
 
     def test_18_answer_engine_hybrid_with_site_and_monitor(self):
@@ -240,7 +240,7 @@ class TestAtlasCore(unittest.TestCase):
 
         res = engine.answer("Why was subject STUDY042-101-002 flagged for an SAE discrepancy and what did the site reply?", cut=1)
         self.assertEqual(res.question_type, "HYBRID_MONITORING")
-        self.assertIn("STUDY042-101-002", res.direct_answer)
+        self.assertIn("STUDY042-101-002", res.answer)
         self.assertIn("AE|STUDY042-101-002|1", res.evidence_references)
         self.assertGreater(len(res.site_replies), 0)
         self.assertGreater(len(res.monitor_decisions), 0)

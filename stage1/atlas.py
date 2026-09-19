@@ -17,7 +17,21 @@ class StudyGraph:
         
     def build(self, cut: int = None):
         """Builds or rebuilds the graph up to the specified cut."""
+        import time
+        start = time.time()
         self.active_cut = cut
+        
+        from graph.graph_statistics import GraphStatistics
+        stats = GraphStatistics.calculate(self._internal_graph, cut=cut)
+        build_ms = int((time.time() - start) * 1000)
+        
+        return {
+            "nodes": stats.get("subject_count", 0) + stats.get("total_records", 0) + stats.get("site_count", 0),
+            "edges": stats.get("total_records", 0),
+            "subjects": stats.get("subject_count", 0),
+            "build_ms": build_ms,
+            "cut": cut
+        }
         
     def patient360(self, usubjid: str) -> dict:
         # Get patient data dynamically filtered by active_cut if needed
@@ -54,10 +68,14 @@ class Atlas:
                     section=""
                 ))
             
-        # Trap handling (return empty if none found)
-        ans_val = response.answer
-        if ans_val == "None found." or ans_val == "None found":
-            ans_val = None
+        # Count handling
+        if response.count is not None:
+            ans_val = response.count
+        else:
+            ans_val = response.answer
+            # Trap handling (return [] if none found)
+            if ans_val == "None found." or ans_val == "None found":
+                ans_val = []
             
         # Wrap into official Answer schema
         return Answer(
