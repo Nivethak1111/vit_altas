@@ -1,6 +1,6 @@
 import json
 import os
-import requests
+import urllib.request
 import datetime
 from dataclasses import dataclass
 from typing import List, Dict, Any, Set
@@ -65,6 +65,16 @@ class ReviewCrew:
         }
         with open(self.memory_file, 'w') as f:
             json.dump(data, f, indent=2)
+            
+    def _post(self, url, payload):
+        req = urllib.request.Request(url, data=json.dumps(payload).encode('utf-8'), headers=self.headers, method='POST')
+        try:
+            with urllib.request.urlopen(req, timeout=1) as response:
+                if response.status == 200:
+                    return type('obj', (object,), {'status_code': 200, 'json': lambda: json.loads(response.read().decode('utf-8'))})()
+        except Exception:
+            pass
+        return type('obj', (object,), {'status_code': 500, 'json': lambda: {}})()
             
     def _add_trace(self, node: str, action: str, trace_list: List[Dict[str, Any]], cut: int, protocol_version: int, evidence: List[str] = None):
         entry = {
@@ -177,6 +187,7 @@ class ReviewCrew:
                 continue
             ev = f.evidence_references[0]
             if ev in self.query_history:
+                self._add_trace("data_manager", f"duplicate_prevented: Query already exists for {ev}", trace, cut, protocol_version, [ev])
                 continue
                 
             self.query_history.add(ev)
@@ -189,7 +200,7 @@ class ReviewCrew:
                     "cut": cut, "text": f.description + " Please verify against source and correct or confirm."
                 }
                 self._add_trace("data_manager", f"Query raised on {ev}: {f.description}", trace, cut, protocol_version, [ev])
-                try: requests.post(f"{self.gateway_url}/queries", json=query_payload, headers=self.headers)
+                try: self._post(f"{self.gateway_url}/queries", query_payload)
                 except Exception: pass
                 
         # ---------------------------------------------------------
@@ -205,6 +216,8 @@ class ReviewCrew:
             hk = f"{f.finding_code}|{f.subject}" if f.subject else f"{f.finding_code}|{f.site}"
             if hk not in self.escalation_history:
                 valid_escalations.append(f)
+            else:
+                self._add_trace("human_gate", f"Duplicate escalation prevented for {hk}", trace, cut, protocol_version, f.evidence_references)
                 
         monitor_decisions = []
         executed_actions = []
@@ -232,7 +245,7 @@ class ReviewCrew:
                     payload["evidence"].append({"domain": parts[0], "usubjid": parts[1], "seq": int(parts[2])})
             
             try:
-                resp = requests.post(f"{self.gateway_url}/escalations", json=payload, headers=self.headers)
+                resp = self._post(f"{self.gateway_url}/escalations", payload)
                 decision = None
                 reason = "No response"
                 
@@ -248,7 +261,7 @@ class ReviewCrew:
                     
                     self._add_trace("human_gate", f"CLARIFY requested for {hk}. Answered from graph: {ans.answer}", trace, cut, protocol_version, f.evidence_references)
                     
-                    resp2 = requests.post(f"{self.gateway_url}/escalations", json=payload, headers=self.headers)
+                    resp2 = self._post(f"{self.gateway_url}/escalations", payload)
                     if resp2.status_code == 200:
                         decision2_data = resp2.json()
                         decision = decision2_data.get("decision")

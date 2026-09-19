@@ -76,7 +76,10 @@ function switchTab(tabId) {
     "documents",
     "labexplorer",
     "cutexplorer",
-    "evidence"
+    "evidence",
+    "humangate",
+    "cyclereport",
+    "trace"
   ];
 
   tabs.forEach((t) => {

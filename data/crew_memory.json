@@ -1,0 +1,34 @@
+{
+  "query_history": [
+    "EX|STUDY042-102-002|1"
+  ],
+  "escalation_history": [],
+  "subject_flags": {
+    "STUDY042-101-001": [
+      1
+    ],
+    "STUDY042-101-002": [
+      1
+    ],
+    "STUDY042-102-001": [
+      1
+    ],
+    "STUDY042-103-001": [
+      1
+    ],
+    "STUDY042-102-002": [
+      1
+    ]
+  },
+  "site_flags": {
+    "SITE-101": [
+      1
+    ],
+    "SITE-102": [
+      1
+    ],
+    "SITE-103": [
+      1
+    ]
+  }
+}

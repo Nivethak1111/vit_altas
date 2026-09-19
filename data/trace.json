@@ -1,0 +1,107 @@
+[
+  {
+    "timestamp": "2026-09-19T06:15:23.429852",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "detect",
+    "action": "Detected 7 total findings (safety: 4, data: 1, compliance: 2, site: 0)",
+    "evidence": []
+  },
+  {
+    "timestamp": "2026-09-19T06:15:23.429866",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "medical_review",
+    "action": "Drafted escalation for SAE_DISCREPANCY_AESHOSP (STUDY042-101-002)",
+    "evidence": [
+      "AE|STUDY042-101-002|1"
+    ]
+  },
+  {
+    "timestamp": "2026-09-19T06:15:23.429871",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "medical_review",
+    "action": "Drafted escalation for SAE_REPORTING_DELAY (STUDY042-101-002)",
+    "evidence": [
+      "AE|STUDY042-101-002|1"
+    ]
+  },
+  {
+    "timestamp": "2026-09-19T06:15:23.431274",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "medical_review",
+    "action": "Drafted escalation for PROHIBITED_MED_GLUCOCORTICOID (STUDY042-103-001)",
+    "evidence": [
+      "CM|STUDY042-103-001|1"
+    ]
+  },
+  {
+    "timestamp": "2026-09-19T06:15:23.431296",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "data_manager",
+    "action": "duplicate_prevented: Query already exists for EX|STUDY042-102-002|1",
+    "evidence": [
+      "EX|STUDY042-102-002|1"
+    ]
+  },
+  {
+    "timestamp": "2026-09-19T06:15:23.431302",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "compliance",
+    "action": "2 deviations under v1",
+    "evidence": []
+  },
+  {
+    "timestamp": "2026-09-19T06:15:25.445215",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "human_gate",
+    "action": "UNKNOWN decision None for SAE_MISCODED|STUDY042-101-002",
+    "evidence": [
+      "AE|STUDY042-101-002|1"
+    ]
+  },
+  {
+    "timestamp": "2026-09-19T06:15:27.471602",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "human_gate",
+    "action": "UNKNOWN decision None for SAE_REPORTING_DELAY|STUDY042-101-002",
+    "evidence": [
+      "AE|STUDY042-101-002|1"
+    ]
+  },
+  {
+    "timestamp": "2026-09-19T06:15:29.497618",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "human_gate",
+    "action": "UNKNOWN decision None for HYS_LAW_CANDIDATE|STUDY042-102-001",
+    "evidence": [
+      "LB|STUDY042-102-001|4",
+      "LB|STUDY042-102-001|5"
+    ]
+  },
+  {
+    "timestamp": "2026-09-19T06:15:31.525457",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "human_gate",
+    "action": "UNKNOWN decision None for PROHIBITED_MED_GLUCOCORTICOID|STUDY042-103-001",
+    "evidence": [
+      "CM|STUDY042-103-001|1"
+    ]
+  },
+  {
+    "timestamp": "2026-09-19T06:15:31.527180",
+    "cut": 1,
+    "protocol_version": 1,
+    "node": "execute",
+    "action": "Cycle complete, report generated.",
+    "evidence": []
+  }
+]
